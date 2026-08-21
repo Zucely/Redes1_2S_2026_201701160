@@ -4,18 +4,17 @@
 **Carné: 201701160**
 
 ## 1. Inventario de equipos
-
-  Ítem                              Cantidad Ubicación
-  ------------------------- ---------------- ----------------------
-  Switch principal (core)                  1 MDF
-  Switch de departamento                   8 Uno por departamento
-  Patch panel                 2 × 24 puertos MDF
-  Rack de piso                             1 MDF
-  UPS                                      1 MDF
-  Tomas de red unitarias                   2 Backend
-  Tomas de red dobles                     22 Áreas de trabajo
-  Tomas de red triples                     1 Data Center
-  Puntos de red                           48 Todo el edificio
+| Ítem | Cantidad | Ubicación |
+|---|---:|---|
+| Switch principal (core) | 1 | MDF |
+| Switch de departamento | 8 | Uno por departamento |
+| Patch panel | 1 patch panel por departamento (8 total) + patch panel troncal en MDF | Áreas de trabajo |
+| Rack de piso | 1 | MDF |
+| UPS | 1 | MDF |
+| Tomas de red unitarias | 2 | Backend |
+| Tomas de red dobles | 22 | Áreas de trabajo |
+| Tomas de red triples | 1 | Data Center |
+| Puntos de red | 48 | Todo el edificio |
 
 ## 2. Ubicación y justificación del MDF
 
@@ -27,17 +26,17 @@ Innovación, Dirección General, Backend y Data Center.
 
 ## 3. Distribución de equipos por departamento
 
-  Depto                    Escritorio   Laptop   Servidor   Total puntos
-  ---------------------- ------------ -------- ---------- --------------
-  Recepción                         3        0          1              4
-  Recursos Humanos                  6        2          0              8
-  Legal                             3        1          0              4
-  Sala de Capacitación             10        0          0             10
-  Diseño e Innovación               4        3          1              8
-  Dirección General                 1        3          0              4
-  Backend                           3        3          1              7
-  Data Center                       0        0          3              3
-  **Total**                    **30**   **12**      **6**         **48**
+| Depto | Escritorios | Laptops | Servidores | Total puntos |
+|---|---:|---:|---:|---:|
+| Recepción | 3 | 0 | 1 | 4 |
+| Recursos Humanos | 6 | 2 | 0 | 8 |
+| Legal | 3 | 1 | 0 | 4 |
+| Sala de Capacitación | 10 | 0 | 0 | 10 |
+| Diseño e Innovación | 4 | 3 | 1 | 8 |
+| Dirección General | 1 | 3 | 0 | 4 |
+| Backend | 3 | 3 | 1 | 7 |
+| Data Center | 0 | 0 | 3 | 3 |
+| **Total** | **30** | **12** | **6** | **48** |
 
 ## 4. Justificación de topología por departamento
 
@@ -46,93 +45,36 @@ principal del MDF conecta con los ocho switches departamentales mediante
 enlaces troncales, y cada switch departamental conecta sus hosts
 mediante estrella.
 
-  -----------------------------------------------------------------------
-  Depto                   Topología               Justificación
-  ----------------------- ----------------------- -----------------------
-  Recepción               Estrella                4 puntos; facilita
-                                                  administración,
-                                                  aislamiento de fallas y
-                                                  crecimiento.
-
-  Recursos Humanos        Estrella                8 puntos; centraliza la
-                                                  conexión y facilita
-                                                  futuras ampliaciones.
-
-  Legal                   Estrella                4 puntos; solución
-                                                  sencilla, económica y
-                                                  fácil de mantener.
-
-  Sala de Capacitación    Estrella                10 puntos; permite
-                                                  administrar
-                                                  individualmente los
-                                                  puestos y crecer.
-
-  Diseño e Innovación     Estrella                8 puntos; facilita
-                                                  mantenimiento y
-                                                  administración del
-                                                  servidor y estaciones.
-
-  Dirección General       Estrella                4 puntos; facilita
-                                                  disponibilidad y
-                                                  detección de fallas.
-
-  Backend                 Estrella                7 puntos; facilita
-                                                  administración del
-                                                  segmento y crecimiento.
-
-  Data Center             Estrella                3 servidores; conexión
-                                                  centralizada y
-                                                  administración
-                                                  independiente.
-  -----------------------------------------------------------------------
+| Depto | Topología | Justificación |
+|---|---|---|
+| Recepción | Estrella | 4 puntos; facilita administración, aislamiento de fallas y crecimiento. |
+| Recursos Humanos | Estrella | 8 puntos; centraliza la conexión y facilita futuras ampliaciones. |
+| Legal | Estrella | 4 puntos; solución sencilla, económica y fácil de mantener. |
+| Sala de Capacitación | Estrella | 10 puntos; permite administrar individualmente los puestos y crecer. |
+| Diseño e Innovación | Estrella | 8 puntos; facilita mantenimiento y administración del servidor y estaciones. |
+| Dirección General | Estrella | 4 puntos; facilita disponibilidad y detección de fallas. |
+| Backend | Estrella | 7 puntos; facilita administración del segmento y crecimiento. |
+| Data Center | Estrella | 3 servidores; conexión centralizada y administración independiente. |
 
 ## 5. Tipo y categoría de cable por segmento
 
-  -----------------------------------------------------------------------
-  Segmento          Tipo              Categoría         Justificación
-  ----------------- ----------------- ----------------- -----------------
-  Horizontal        UTP de cobre      Cat 6A            Adecuado para
-                                                        distancias
-                                                        cortas, altas
-                                                        velocidades y
-                                                        cableado
-                                                        estructurado.
-
-  Troncal           Fibra óptica      OM3               Mayor capacidad,
-                    multimodo                           inmunidad a
-                                                        interferencias y
-                                                        escalabilidad
-                                                        para uplinks.
-  -----------------------------------------------------------------------
+| Segmento | Tipo | Categoría | Justificación |
+|---|---|---|---|
+| Horizontal | UTP de cobre | Cat 6A | Adecuado para distancias cortas, altas velocidades y cableado estructurado. |
+| Troncal | Fibra óptica multimodo | OM3 | Mayor capacidad, inmunidad a interferencias y escalabilidad para uplinks. |
 
 ## 6. Distancias estimadas y cálculo de bobinas
-
-  --------------------------------------------------------------------------
-  Depto                 Troncal     Horizontal         Puntos          Cable
-                       estimado       promedio                    horizontal
-  -------------- -------------- -------------- -------------- --------------
-  Recepción              14.5 m            3 m              4           12 m
-
-  Recursos                7.5 m            3 m              8           24 m
-  Humanos                                                     
-
-  Legal                  15.5 m            3 m              4           12 m
-
-  Sala de                  14 m            3 m             10           30 m
-  Capacitación                                                
-
-  Diseño e                  9 m            3 m              8           24 m
-  Innovación                                                  
-
-  Dirección                17 m            3 m              4           12 m
-  General                                                     
-
-  Backend                20.5 m            3 m              7           21 m
-
-  Data Center            19.5 m            3 m              3            9 m
-
-  **Total**                                            **48**      **144 m**
-  --------------------------------------------------------------------------
+| Depto | Troncal estimado | Horizontal promedio | Puntos | Cable horizontal |
+|---|---:|---:|---:|---:|
+| Recepción | 14.5 m | 3 m | 4 | 12 m |
+| Recursos Humanos | 7.5 m | 3 m | 8 | 24 m |
+| Legal | 15.5 m | 3 m | 4 | 12 m |
+| Sala de Capacitación | 14 m | 3 m | 10 | 30 m |
+| Diseño e Innovación | 9 m | 3 m | 8 | 24 m |
+| Dirección General | 17 m | 3 m | 4 | 12 m |
+| Backend | 20.5 m | 3 m | 7 | 21 m |
+| Data Center | 19.5 m | 3 m | 3 | 9 m |
+| **Total** | — | — | **48** | **144 m** |                                      |
 
 Se agrega 15 % de margen: **144 × 1.15 ≈ 166 m**.
 
@@ -146,35 +88,16 @@ medición exacta sobre la escala del plano.
 
 ## 7. Cableado troncal
 
-  -----------------------------------------------------------------------
-  Enlace                  Medio                   Justificación
-  ----------------------- ----------------------- -----------------------
-  MDF -- Recepción        Fibra OM3               Alta capacidad e
-                                                  inmunidad a
-                                                  interferencias.
-
-  MDF -- RRHH             Fibra OM3               Capacidad y
-                                                  escalabilidad.
-
-  MDF -- Legal            Fibra OM3               Enlace troncal de alta
-                                                  capacidad.
-
-  MDF -- Capacitación     Fibra OM3               Área con mayor cantidad
-                                                  de hosts; se prioriza
-                                                  capacidad.
-
-  MDF -- Diseño           Fibra OM3               Área con servidor y
-                                                  múltiples estaciones.
-
-  MDF -- Dirección        Fibra OM3               Enlace troncal estable
-                                                  y escalable.
-
-  MDF -- Backend          Fibra OM3               Área con servidor y
-                                                  múltiples estaciones.
-
-  MDF -- Data Center      Fibra OM3               Enlace crítico hacia
-                                                  servidores principales.
-  -----------------------------------------------------------------------
+ | Enlace | Medio | Justificación |
+|---|---|---|
+| MDF -- Recepción | Fibra OM3 | Alta capacidad e inmunidad a interferencias. |
+| MDF -- RRHH | Fibra OM3 | Capacidad y escalabilidad. |
+| MDF -- Legal | Fibra OM3 | Enlace troncal de alta capacidad. |
+| MDF -- Capacitación | Fibra OM3 | Área con mayor cantidad de hosts; se prioriza capacidad. |
+| MDF -- Diseño | Fibra OM3 | Área con servidor y múltiples estaciones. |
+| MDF -- Dirección | Fibra OM3 | Enlace troncal estable y escalable. |
+| MDF -- Backend | Fibra OM3 | Área con servidor y múltiples estaciones. |
+| MDF -- Data Center | Fibra OM3 | Enlace crítico hacia servidores principales. |
 
 Etiquetas: `MDF-Recepcion`, `MDF-RRHH`, `MDF-Legal`, `MDF-Capacitacion`,
 `MDF-Diseno`, `MDF-Direccion`, `MDF-Backend`, `MDF-DataCenter`.
@@ -205,12 +128,12 @@ panels, ODF, organizadores, UPS y espacio para crecimiento.
 
 ## 11. Respaldo de energía (UPS)
 
-  Equipo                       Cantidad   Consumo estimado       Total
-  -------------------------- ---------- ------------------ -----------
-  Switch principal                    1              100 W       100 W
-  Switches departamentales            8               60 W       480 W
-  Equipamiento auxiliar               1               20 W        20 W
-  **Total**                                                  **600 W**
+| Equipo | Cantidad | Consumo estimado | Total |
+|---|---:|---:|---:|
+| Switch principal | 1 | 100 W | 100 W |
+| Switches departamentales | 8 | 60 W | 480 W |
+| Equipamiento auxiliar | 1 | 20 W | 20 W |
+| **Total** | — | — | **600 W** |
 
 Con 25 % de margen: **600 × 1.25 = 750 W**.
 
@@ -220,47 +143,38 @@ especificaciones eléctricas de los modelos seleccionados.
 
 ## 12. Estándares T568A/T568B
 
-  -----------------------------------------------------------------------
-  Enlace                  Tipo                    Justificación
-  ----------------------- ----------------------- -----------------------
-  Switch -- PC/laptop     Straight-through        Dispositivo final a
-                                                  switch.
-
-  Switch -- Servidor      Straight-through        Servidor a switch.
-
-  MDF -- Switch depto     Fibra                   El troncal propuesto es
-                                                  fibra, no UTP.
-
-  Switch -- Switch        Según uplink/equipo     No se utiliza cobre
-                                                  directo entre switches
-                                                  departamentales.
-  -----------------------------------------------------------------------
+| Enlace | Tipo | Justificación |
+|---|---|---|
+| Switch -- PC/laptop | Straight-through | Dispositivo final a switch. |
+| Switch -- Servidor | Straight-through | Servidor a switch. |
+| MDF -- Switch depto | Fibra | El troncal propuesto es fibra, no UTP. |
+| Switch -- Switch | Según uplink/equipo | No se utiliza cobre directo entre switches departamentales. |
 
 ### Straight-through --- T568B en ambos extremos
 
-    Pin Color
-  ----- ----------------
-      1 Blanco/Naranja
-      2 Naranja
-      3 Blanco/Verde
-      4 Azul
-      5 Blanco/Azul
-      6 Verde
-      7 Blanco/Marrón
-      8 Marrón
+| Pin | Color |
+|---:|---|
+| 1 | Blanco/Naranja |
+| 2 | Naranja |
+| 3 | Blanco/Verde |
+| 4 | Azul |
+| 5 | Blanco/Azul |
+| 6 | Verde |
+| 7 | Blanco/Marrón |
+| 8 | Marrón |
 
 ### Crossover --- T568A / T568B
 
-    Pin Extremo A T568A   Extremo B T568B
-  ----- ----------------- -----------------
-      1 Blanco/Verde      Blanco/Naranja
-      2 Verde             Naranja
-      3 Blanco/Naranja    Blanco/Verde
-      4 Azul              Azul
-      5 Blanco/Azul       Blanco/Azul
-      6 Naranja           Verde
-      7 Blanco/Marrón     Blanco/Marrón
-      8 Marrón            Marrón
+| Pin | Extremo A T568A | Extremo B T568B |
+|---:|---|---|
+| 1 | Blanco/Verde | Blanco/Naranja |
+| 2 | Verde | Naranja |
+| 3 | Blanco/Naranja | Blanco/Verde |
+| 4 | Azul | Azul |
+| 5 | Blanco/Azul | Blanco/Azul |
+| 6 | Naranja | Verde |
+| 7 | Blanco/Marrón | Blanco/Marrón |
+| 8 | Marrón | Marrón |
 
 El cableado horizontal se poncha con el mismo estándar en ambos
 extremos: T568B en la toma y T568B en el patch panel.
@@ -271,16 +185,16 @@ extremos: T568B en la toma y T568B en el patch panel.
 
 Formato: `[Departamento]-[Número de Punto de Red]`
 
-  Departamento   Etiquetas
-  -------------- -------------------------------------------
-  Recepción      `Recepcion-PR01` a `Recepcion-PR04`
-  RRHH           `RRHH-PR01` a `RRHH-PR08`
-  Legal          `Legal-PR01` a `Legal-PR04`
-  Capacitación   `Capacitacion-PR01` a `Capacitacion-PR10`
-  Diseño         `Diseno-PR01` a `Diseno-PR08`
-  Dirección      `Direccion-PR01` a `Direccion-PR04`
-  Backend        `Backend-PR01` a `Backend-PR07`
-  Data Center    `DataCenter-PR01` a `DataCenter-PR03`
+| Departamento | Etiquetas |
+|---|---|
+| Recepción | `Recepcion-PR01` a `Recepcion-PR04` |
+| RRHH | `RRHH-PR01` a `RRHH-PR08` |
+| Legal | `Legal-PR01` a `Legal-PR04` |
+| Capacitación | `Capacitacion-PR01` a `Capacitacion-PR10` |
+| Diseño | `Diseno-PR01` a `Diseno-PR08` |
+| Dirección | `Direccion-PR01` a `Direccion-PR04` |
+| Backend | `Backend-PR01` a `Backend-PR07` |
+| Data Center | `DataCenter-PR01` a `DataCenter-PR03` |
 
 ### Troncal
 
