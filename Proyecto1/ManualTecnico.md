@@ -72,3 +72,101 @@ Los 3 switches de este centro se interconectaron formando un **triángulo** (mal
 El enlace hacia `SW-CORE` se estableció mediante 2 conexiones físicas independientes (`SW-IYD-1` Fa0/3 y Fa0/4), pensadas para agregarse como EtherChannel y así proveer mayor capacidad de ancho de banda que el resto de los enlaces troncales del campus.
 
 ![Topología del Centro de Datos](Capturas/topologiaCentroDeDatos.png)
+
+### 4.2.1 Configuración de Trunk y VTP — Centro de I+D
+
+**Enlaces troncales entre los 3 switches (triángulo redundante):**
+
+| Switch A | Puerto | Switch B | Puerto |
+|---|---|---|---|
+| SW-IYD-1 | Fa0/1 | SW-IYD-2 | Fa0/1 |
+| SW-IYD-1 | Fa0/2 | SW-IYD-3 | Fa0/2 |
+| SW-IYD-2 | Fa0/3 | SW-IYD-3 | Fa0/3 |
+
+**Configuración aplicada en SW-IYD-1:**
+
+```
+enable
+configure terminal
+hostname SW-IYD-1
+no ip domain-lookup
+
+interface FastEthernet0/1
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+interface FastEthernet0/2
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+vtp domain Smart_6
+vtp password proyecto12S2026
+vtp mode client
+```
+
+
+**Configuración aplicada en SW-IYD-2:**
+
+```
+enable
+configure terminal
+hostname SW-IYD-2
+no ip domain-lookup
+
+interface FastEthernet0/1
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+interface FastEthernet0/3
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+vtp domain Smart_6
+vtp password proyecto12S2026
+vtp mode client
+```
+
+**Configuración aplicada en SW-IYD-3:**
+```
+enable
+configure terminal
+hostname SW-IYD-3
+no ip domain-lookup
+
+interface FastEthernet0/2
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+interface FastEthernet0/3
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+vtp domain Smart_6
+vtp password proyecto12S2026
+vtp mode client
+```
+
+**Configuración VTP Client en SW-SERVERS:**
+```
+enable
+configure terminal
+hostname SW-SERVERS
+no ip domain-lookup
+
+vtp domain Smart_6
+vtp password proyecto12S2026
+vtp mode client
+```
+
+Los switches `SW-SERVERS`, `SW-IYD-1`, `SW-IYD-2` y `SW-IYD-3` se configuraron en modo **VTP Client**, de forma que reciben automáticamente las VLANs creadas en `SW-CORE` (VTP Server) sin necesidad de crearlas manualmente en cada uno, cumpliendo con el modelo de administración centralizada exigido por el enunciado.
+
+Al interconectar `SW-IYD-1`, `SW-IYD-2` y `SW-IYD-3` en topología de triángulo, se generó un bucle físico de Capa 2. **Spanning Tree Protocol (PVST)** detectó automáticamente la redundancia y colocó uno de los tres enlaces en estado **Blocking**, evitando así tormentas de broadcast mientras se mantiene la alta disponibilidad: si cualquiera de los otros dos enlaces falla, STP reconverge y habilita el enlace bloqueado.
+
+[CAPTURA AQUÍ: show vlan brief en SW-IYD-3 mostrando VLANs propagadas]
+[CAPTURA AQUÍ: topología con el enlace en estado blocking (punto ámbar)]
