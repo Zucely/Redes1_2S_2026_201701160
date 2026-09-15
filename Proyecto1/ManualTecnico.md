@@ -168,5 +168,70 @@ Los switches `SW-SERVERS`, `SW-IYD-1`, `SW-IYD-2` y `SW-IYD-3` se configuraron e
 
 Al interconectar `SW-IYD-1`, `SW-IYD-2` y `SW-IYD-3` en topología de triángulo, se generó un bucle físico de Capa 2. **Spanning Tree Protocol (PVST)** detectó automáticamente la redundancia y colocó uno de los tres enlaces en estado **Blocking**, evitando así tormentas de broadcast mientras se mantiene la alta disponibilidad: si cualquiera de los otros dos enlaces falla, STP reconverge y habilita el enlace bloqueado.
 
-[CAPTURA AQUÍ: show vlan brief en SW-IYD-3 mostrando VLANs propagadas]
-[CAPTURA AQUÍ: topología con el enlace en estado blocking (punto ámbar)]
+![Show vlan brief](Capturas/vlanBriefSWIYD3.png)
+
+### 4.2.2 Asignación de VLANs de Acceso y Direccionamiento IP
+
+**Centro de Datos — VLAN 40 (SERVIDORES) en SW-SERVERS:**
+```
+interface range FastEthernet0/1-4
+switchport mode access
+switchport access vlan 40
+```
+
+| Dispositivo | Switch | Puerto | VLAN | IP | Máscara |
+|---|---|---|---|---|---|
+| SERVER-1 | SW-SERVERS | Fa0/1 | 40 | 192.168.40.1 | 255.255.255.0 |
+| SERVER-2 | SW-SERVERS | Fa0/2 | 40 | 192.168.40.2 | 255.255.255.0 |
+| SERVER-3 | SW-SERVERS | Fa0/3 | 40 | 192.168.40.3 | 255.255.255.0 |
+| SERVER-4 | SW-SERVERS | Fa0/4 | 40 | 192.168.40.4 | 255.255.255.0 |
+
+**Centro de I+D — VLAN 20 (INVESTIGACION) en SW-IYD-1/2/3:**
+
+```
+! SW-IYD-1
+interface range FastEthernet0/3-4
+switchport mode access
+switchport access vlan 20
+
+! SW-IYD-2
+interface FastEthernet0/2
+switchport mode access
+switchport access vlan 20
+interface FastEthernet0/4
+switchport mode access
+switchport access vlan 20
+interface FastEthernet0/5
+switchport mode access
+switchport access vlan 20
+
+! SW-IYD-3
+interface FastEthernet0/1
+switchport mode access
+switchport access vlan 20
+interface FastEthernet0/4
+switchport mode access
+switchport access vlan 20
+interface FastEthernet0/5
+switchport mode access
+switchport access vlan 20
+```
+
+
+| Dispositivo | Switch | Puerto | VLAN | IP | Máscara |
+|---|---|---|---|---|---|
+| PC-IYD-01 | SW-IYD-1 | Fa0/3 | 20 | 192.168.20.1 | 255.255.255.0 |
+| PC-IYD-02 | SW-IYD-1 | Fa0/4 | 20 | 192.168.20.2 | 255.255.255.0 |
+| PC-IYD-03 | SW-IYD-2 | Fa0/2 | 20 | 192.168.20.3 | 255.255.255.0 |
+| PC-IYD-04 | SW-IYD-2 | Fa0/4 | 20 | 192.168.20.4 | 255.255.255.0 |
+| PC-IYD-05 | SW-IYD-2 | Fa0/5 | 20 | 192.168.20.5 | 255.255.255.0 |
+| PC-IYD-06 | SW-IYD-3 | Fa0/1 | 20 | 192.168.20.6 | 255.255.255.0 |
+| PC-IYD-07 | SW-IYD-3 | Fa0/4 | 20 | 192.168.20.7 | 255.255.255.0 |
+| PC-IYD-08 | SW-IYD-3 | Fa0/5 | 20 | 192.168.20.8 | 255.255.255.0 |
+
+**Pruebas de conectividad realizadas:**
+- Ping exitoso entre dispositivos dentro de la misma VLAN (ej. PC-IYD-01 → PC-IYD-08, ambas en VLAN 20 pero en switches físicos distintos), confirmando que el trunk y VTP propagan correctamente el tráfico etiquetado a través del triángulo redundante.
+
+[CAPTURA AQUÍ: show vlan brief en SW-IYD-1, SW-IYD-2 y SW-IYD-3]
+[CAPTURA AQUÍ: ping exitoso entre PC-IYD-01 y PC-IYD-08]
+[CAPTURA AQUÍ: IP Configuration de un servidor y una PC como ejemplo]
