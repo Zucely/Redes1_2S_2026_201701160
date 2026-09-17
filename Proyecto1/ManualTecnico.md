@@ -46,7 +46,7 @@ vtp version 2
 
 `SW-CORE` se configuró como **VTP Server**, ya que actúa como el núcleo administrativo del dominio `Smart_6` y es el único switch donde deben crearse las VLANs; estas se propagarán automáticamente hacia los switches clientes del resto del campus.
 
-[CAPTURA AQUÍ: topología del Centro de Datos en Packet Tracer]
+![Topología del Centro de Datos](Capturas/topCentrDatos.png)
 
 ---
 
@@ -71,7 +71,12 @@ Los 3 switches de este centro se interconectaron formando un **triángulo** (mal
 
 El enlace hacia `SW-CORE` se estableció mediante 2 conexiones físicas independientes (`SW-IYD-1` Fa0/3 y Fa0/4), pensadas para agregarse como EtherChannel y así proveer mayor capacidad de ancho de banda que el resto de los enlaces troncales del campus.
 
-![Topología del Centro de Datos](Capturas/topologiaCentroDeDatos.png)
+- **Topologia del Centro de Investigacion y Desarrollo**
+![Topología del Centro de Investigacion y Desarrollo](Capturas/topCIYD.png)
+
+- **Union del Centro de Investigacion y Desarrollo y Centro de datos**
+![Topología del union CT e IYD](Capturas/topUnionCDIYD.png)
+
 
 ### 4.2.1 Configuración de Trunk y VTP — Centro de I+D
 
@@ -188,13 +193,16 @@ switchport access vlan 40
 
 **Centro de I+D — VLAN 20 (INVESTIGACION) en SW-IYD-1/2/3:**
 
+- SW-IYD-1
+
 ```
-! SW-IYD-1
 interface range FastEthernet0/3-4
 switchport mode access
 switchport access vlan 20
+```
 
-! SW-IYD-2
+- SW-IYD-2
+```
 interface FastEthernet0/2
 switchport mode access
 switchport access vlan 20
@@ -204,8 +212,10 @@ switchport access vlan 20
 interface FastEthernet0/5
 switchport mode access
 switchport access vlan 20
+```
 
-! SW-IYD-3
+- SW-IYD-3
+```
 interface FastEthernet0/1
 switchport mode access
 switchport access vlan 20
@@ -230,11 +240,25 @@ switchport access vlan 20
 | PC-IYD-08 | SW-IYD-3 | Fa0/5 | 20 | 192.168.20.8 | 255.255.255.0 |
 
 **Pruebas de conectividad realizadas:**
-- Ping exitoso entre dispositivos dentro de la misma VLAN (ej. PC-IYD-01 → PC-IYD-08, ambas en VLAN 20 pero en switches físicos distintos), confirmando que el trunk y VTP propagan correctamente el tráfico etiquetado a través del triángulo redundante.
+- Ping exitoso entre dispositivos dentro de la misma VLAN, confirmando que el trunk y VTP propagan correctamente el tráfico etiquetado a través del triángulo redundante.
 
-[CAPTURA AQUÍ: show vlan brief en SW-IYD-1, SW-IYD-2 y SW-IYD-3]
-[CAPTURA AQUÍ: ping exitoso entre PC-IYD-01 y PC-IYD-08]
-[CAPTURA AQUÍ: IP Configuration de un servidor y una PC como ejemplo]
+- Ping exitoso entre misma Vlan
+![Ping exitoso](Capturas/PINGexitosoVlan20.png)
+
+- Ping fallido por diferentes Vlans
+![Ping exitoso](Capturas/pingFallidoDifVlan.png)
+
+
+- Show vlan brief SW-IYD-1
+![Show vlan brief SW-IYD-1](Capturas/vlanBriefIYD1.png)
+- Show vlan brief SW-IYD-2
+![Show vlan brief SW-IYD-2](Capturas/vlanBriefIYD2.png)
+- Show vlan brief SW-IYD-3
+![Show vlan brief SW-IYD-3](Capturas/vlanBriefIYD3.png)
+
+- Configuracion IP
+![Show vlan brief SW-IYD-3](Capturas/IPconfigServerPC.png)
+
 
 
 ### 4.3 Edificio Corporativo
@@ -492,3 +516,83 @@ Dado que no es posible eliminar el Hub sin sustituir la maquinaria legacy (fuera
 3. **Enlace troncal dedicado hacia el Core:** el tráfico legítimo que logra salir del segmento Legacy circula por un enlace independiente (Fa0/1 trunk), sin competir por ancho de banda con otros segmentos del campus en el mismo cable.
 
 Estas medidas mitigan el impacto del dominio de colisión compartido sin eliminarlo, tal como lo exige el enunciado — la única forma de eliminarlo por completo sería reemplazar el Hub por un switch, lo cual no es viable mientras la maquinaria industrial opere con protocolos legacy incompatibles con conmutación moderna.
+
+### 8.2 Selección de Root Bridge (STP - PVST)
+
+Se configuró manualmente la prioridad de Spanning Tree para establecer switches Root Bridge estratégicos en cada uno de los dos triángulos redundantes del campus, en lugar de dejar la elección por default (que depende únicamente de la MAC address más baja).
+
+| VLAN | Root Bridge asignado | Prioridad | Justificación |
+|---|---|---|---|
+| 10 (Gerencia) | SW-CORE | 4096 | Punto de salida obligatorio del triángulo Corporativo hacia el resto del campus |
+| 50 (Visitantes) | SW-CORE | 4096 | Mismo triángulo que Gerencia |
+| 20 (Investigación) | SW-IYD-1 | 4096 | Switch de distribución de I+D, único con salida hacia el Core |
+| 30 (Producción) | SW-CORE | 4096 | Backbone central del campus (sin bucle real en esta área) |
+| 40 (Servidores) | SW-CORE | 4096 | Backbone central del campus (sin bucle real en esta área) |
+| 90 (Nativa) | SW-CORE | 4096 | Punto más central de todo el campus |
+
+**Resultado verificado con `show spanning-tree`:**
+
+En el triángulo Corporativo (VLAN 10), con `SW-CORE` como root, el puerto Fa0/2 de `SW-EDF-CORP-B` (enlace directo hacia `SW-EDF-CORP-A`) quedó en estado **Blocking (Altn)**, mientras que ambas alas mantienen su ruta directa hacia el Core en estado Forwarding. Esto confirma que, ante una falla del enlace Core↔A o Core↔B, STP reconvergerá utilizando el enlace A↔B, cumpliendo el requisito de alta disponibilidad entre alas.
+
+En el triángulo de I+D (VLAN 20), con `SW-IYD-1` como root, el puerto Fa0/3 de `SW-IYD-3` (enlace directo hacia `SW-IYD-2`) quedó en estado **Blocking (Altn)**, mientras que ambos switches de hoja mantienen su ruta directa hacia `SW-IYD-1` en Forwarding. Esto confirma que la caída de cualquiera de los tres switches no aísla a los demás, ya que existe siempre un camino alternativo disponible.
+
+[CAPTURA AQUÍ: show spanning-tree vlan 10 en SW-CORE, SW-EDF-CORP-A, SW-EDF-CORP-B]
+[CAPTURA AQUÍ: show spanning-tree vlan 20 en SW-IYD-1, SW-IYD-2, SW-IYD-3]
+
+### 8.3 Seguridad Básica — Banner MOTD
+
+Se configuró un banner de tipo **MOTD (Message Of The Day)** en todos los switches de distribución del campus, con el propósito de advertir formalmente sobre el acceso restringido al dispositivo antes de cualquier intento de autenticación. Esta es una práctica estándar de seguridad perimetral en entornos de red empresarial.
+
+**Comando aplicado:**
+
+```
+banner motd #Acceso Restringido - TechPark_201701160#
+```
+
+
+**Switches considerados "de distribución"** (aquellos que constituyen el único punto de entrada/salida hacia el Core desde su respectiva área, o que distribuyen tráfico hacia switches de acceso dentro de su propio edificio):
+
+| Switch | Rol de distribución |
+|---|---|
+| SW-CORE | Núcleo del campus, distribuye hacia las 3 áreas restantes |
+| SW-IYD-1 | Único enlace de I+D hacia el Core |
+| SW-EDF-CORP-A | Distribuye hacia su ala y conecta directo al Core |
+| SW-EDF-CORP-B | Distribuye hacia su ala y conecta directo al Core |
+| SW-PLANTA | Único enlace de Planta de Producción hacia el Core |
+
+No se aplicó en `SW-SERVERS`, `SW-IYD-2` ni `SW-IYD-3`, al ser switches de acceso puro (no distribuyen tráfico hacia otros switches ni constituyen un punto único de conexión hacia el Core).
+
+[CAPTURA AQUÍ: banner MOTD visible al reconectar la sesión de consola en SW-CORE]
+
+### 4.5 Dominios de Colisión y Dominios de Broadcast
+
+#### 4.5.1 Dominios de Colisión (por switch, según puertos activos)
+
+| Switch | Puertos activos | Dominios de colisión generados | Detalle |
+|---|---|---|---|
+| SW-CORE | Gi0/1, Gi0/2, Fa0/1, Fa0/2, Fa0/3, Fa0/4, Fa0/5 | 7 | Uno por cada puerto (full-duplex, punto a punto) |
+| SW-SERVERS | Fa0/1-4, Gi0/1, Gi0/2 | 6 | Uno por cada puerto |
+| SW-IYD-1 | Fa0/1-6 | 6 | Uno por cada puerto |
+| SW-IYD-2 | Fa0/1-5 | 5 | Uno por cada puerto |
+| SW-IYD-3 | Fa0/1-5 | 5 | Uno por cada puerto |
+| SW-EDF-CORP-A | Fa0/1-5 | 5 | Uno por cada puerto (incluye el puerto hacia el AP) |
+| SW-EDF-CORP-B | Fa0/1-4 | 4 | Uno por cada puerto |
+| SW-PLANTA | Fa0/1 | 1 | Puerto normal, hacia SW-CORE (full-duplex) |
+| SW-PLANTA (segmento Legacy) | Fa0/2 | **1 dominio de colisión compartido** | Fa0/2 + HUB-LEGACY + PC-LEGACY-1, PC-LEGACY-2, PC-LEGACY-3. Al no haber segmentación de Capa 1 en el Hub, estos 4 elementos (puerto + 3 PCs) **comparten un único dominio de colisión**, a diferencia de cualquier otro segmento de la red |
+
+**Total de dominios de colisión en la red:** 39 (38 individuales por puerto de switch + 1 compartido en el segmento Legacy)
+
+**Nota sobre el segmento inalámbrico (VLAN 50):** el enlace radial entre `ACC-POINT-VISITANTES` y las laptops `LAP-VIS-1`/`LAP-VIS-2` constituye técnicamente un dominio de colisión adicional de tipo half-duplex compartido (medio inalámbrico), independiente del dominio de colisión del puerto Fa0/1 de `SW-EDF-CORP-A` (que conecta al AP por cable).
+
+#### 4.5.2 Dominios de Broadcast (uno por VLAN activa)
+
+| VLAN | Nombre | Dispositivos que lo integran | Switches involucrados |
+|---|---|---|---|
+| 10 | GERENCIA | PC-GER-1, PC-GER-2, PC-GER-3, PC-GER-4 | SW-EDF-CORP-A, SW-EDF-CORP-B |
+| 20 | INVESTIGACION | PC-IYD-01 a PC-IYD-08 | SW-IYD-1, SW-IYD-2, SW-IYD-3 |
+| 30 | PRODUCCION | PC-LEGACY-1, PC-LEGACY-2, PC-LEGACY-3 | SW-PLANTA (a través del segmento Legacy) |
+| 40 | SERVIDORES | SERVER-1, SERVER-2, SERVER-3, SERVER-4 | SW-SERVERS |
+| 50 | VISITANTES | LAP-VIS-1, LAP-VIS-2 (inalámbrico vía ACC-POINT-VISITANTES) | SW-EDF-CORP-A |
+| 90 | NATIVA | Sin hosts finales asignados — transporta tráfico no etiquetado entre trunks (control) | Todos los switches del campus |
+
+Cada VLAN constituye un dominio de broadcast **aislado de los demás**, independientemente de que sus dispositivos estén distribuidos en switches físicamente distintos — esto se logra gracias a la segmentación lógica por VLAN y su propagación centralizada mediante VTP, cumpliendo el objetivo de aislamiento inter-VLAN establecido en el resultado del aprendizaje del proyecto.
