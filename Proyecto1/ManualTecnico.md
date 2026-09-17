@@ -173,7 +173,7 @@ Los switches `SW-SERVERS`, `SW-IYD-1`, `SW-IYD-2` y `SW-IYD-3` se configuraron e
 
 Al interconectar `SW-IYD-1`, `SW-IYD-2` y `SW-IYD-3` en topología de triángulo, se generó un bucle físico de Capa 2. **Spanning Tree Protocol (PVST)** detectó automáticamente la redundancia y colocó uno de los tres enlaces en estado **Blocking**, evitando así tormentas de broadcast mientras se mantiene la alta disponibilidad: si cualquiera de los otros dos enlaces falla, STP reconverge y habilita el enlace bloqueado.
 
-![Show vlan brief](Capturas/vlanBriefSWIYD3.png)
+![Show vlan brief](Capturas/vlanBriefSWIYD2.png)
 
 ### 4.2.2 Asignación de VLANs de Acceso y Direccionamiento IP
 
@@ -353,19 +353,23 @@ vtp mode client
 
 Al interconectar `SW-CORE`, `SW-EDF-CORP-A` y `SW-EDF-CORP-B` en topología triangular, se generó nuevamente un bucle de Capa 2. **Spanning Tree Protocol (PVST)** bloqueó automáticamente uno de los tres enlaces para prevenir tormentas de broadcast, garantizando que la conectividad entre alas se mantenga activa ante la falla de cualquiera de los otros dos enlaces.
 
-[CAPTURA AQUÍ: show vlan brief en SW-EDF-CORP-A y SW-EDF-CORP-B mostrando VLANs propagadas]
+- Show vlan brief SW-EDF-CORP-A
+![Show Vlan Brief SW-EDF-CORP-A](Capturas/vlanBriefCorpA.png)
+- Show vlan brief SW-EDF-CORP-B
+![Show vlan brief SW-EDF-CORP-B](Capturas/vlanBriefCorpB.png)
+
 
 ---
 
 ### 4.3.2 Asignación de VLANs de Acceso — Gerencia (VLAN 10)
+- SW-EDF-CORP-A (PC-GER-3, PC-GER-4)
 ```
-! SW-EDF-CORP-A (PC-GER-3, PC-GER-4)
 interface range FastEthernet0/4-5
 switchport mode access
 switchport access vlan 10
-
-! SW-EDF-CORP-B (PC-GER-1, PC-GER-2)
-interface range FastEthernet0/3-4
+```
+- SW-EDF-CORP-B (PC-GER-1, PC-GER-2)
+```interface range FastEthernet0/3-4
 switchport mode access
 switchport access vlan 10
 ```
@@ -379,7 +383,11 @@ switchport access vlan 10
 
 **Prueba de conectividad:** ping exitoso entre PCs de ambas alas dentro de la misma VLAN 10 (ej. PC-GER-1 ↔ PC-GER-3), confirmando conectividad a través del trunk entre switches físicamente distintos.
 
-[CAPTURA AQUÍ: ping exitoso entre PC-GER-1 y PC-GER-3]
+- Ping exitoso
+![Ping exitoso gerencia](Capturas/pingEXITOSOger.png)
+
+- Ping fallido con otra vlan
+![Ping fallido gerencia](Capturas/pingFallGere.png)
 
 ---
 
@@ -401,17 +409,22 @@ exit
 | Autenticación | WPA2-PSK |
 | Contraseña | TechPark2026 |
 
-[CAPTURA AQUÍ: configuración Port 1 (802.11) del Access Point]
+- Configuracion Port 1 (802.11) del Access Point
+![Configuracion Port 1 (802.11) del Access Point](Capturas/confAccPoint.png)
 
 **Preparación de los clientes inalámbricos (laptops):**
 
 Las laptops `LAP-VIS-1` y `LAP-VIS-2` requirieron la instalación manual del módulo inalámbrico **WPC300N** en su ranura física (apagando el equipo antes de insertarlo), ya que no venía integrado por defecto.
 
-[CAPTURA AQUÍ: pestaña Physical de LAP-VIS-1 mostrando el módulo WPC300N instalado]
+
+- Physical de LAP-VIS-1 con módulo WPC300N instalado
+![Configuracion Port 1 (802.11) del Access Point](Capturas/modWifi.png)
+
 
 Posteriormente, desde **Desktop → PC Wireless → Connect**, cada laptop se asoció manualmente a la red `Visitantes_TechPark` ingresando la contraseña correspondiente.
 
-[CAPTURA AQUÍ: pestaña Connect de PC Wireless con el SSID Visitantes_TechPark asociado]
+- pestaña Connect de PC Wireless con el SSID Visitantes_TechPark asociado
+![pestaña Connect de PC Wireless con el SSID Visitantes_TechPark asociado](Capturas/conexionWIifi.png)
 
 Finalmente, se asignó direccionamiento IP **estático** (no DHCP) a cada laptop, dentro del rango correspondiente a la VLAN 50:
 
@@ -420,15 +433,16 @@ Finalmente, se asignó direccionamiento IP **estático** (no DHCP) a cada laptop
 | LAP-VIS-1 | 192.168.50.1 | 255.255.255.0 |
 | LAP-VIS-2 | 192.168.50.2 | 255.255.255.0 |
 
-[CAPTURA AQUÍ: IP Configuration en modo Static de LAP-VIS-1]
+- IP Configuration en modo Static de LAP-VIS-1
+![IP Configuration en modo Static de LAP-VIS-1](Capturas/ipLaptop.png)
 
 **Pruebas de conectividad y aislamiento:**
 
 - Ping exitoso entre `LAP-VIS-1` (192.168.50.1) y `LAP-VIS-2` (192.168.50.2), confirmando conectividad inalámbrica dentro de la VLAN 50.
 - Ping fallido desde `LAP-VIS-1` hacia una PC de Gerencia (ej. 192.168.10.1), confirmando el aislamiento inter-VLAN entre el tráfico de invitados y el tráfico administrativo, tal como lo exige el enunciado.
 
-[CAPTURA AQUÍ: ping exitoso LAP-VIS-1 → LAP-VIS-2]
-[CAPTURA AQUÍ: ping fallido (Request timed out) LAP-VIS-1 → PC-GER-1]
+- Ping exitoso LAP-VIS-1 → LAP-VIS-2 y fallido con otras vlans
+![Ping exitoso LAP-VIS-1 → LAP-VIS-2](Capturas/pingsModuloWIifi.png)
 
 
 ### 4.4 Planta de Producción
@@ -490,9 +504,14 @@ vtp mode client
 
 **Prueba de conectividad:** ping exitoso entre las 3 PCs legacy, confirmando comunicación dentro del segmento compartido y a través de la VLAN 30 hacia el resto del dominio VTP.
 
-[CAPTURA AQUÍ: show vlan brief en SW-PLANTA]
-[CAPTURA AQUÍ: ping exitoso entre PC-LEGACY-1 y PC-LEGACY-3]
-[CAPTURA AQUÍ: topología de la Planta de Producción en Packet Tracer]
+- Show vlan brief en SW-PLANTA
+![Show vlan brief en SW-PLANTA](Capturas/showVlanBriefPlanta.png)
+- Ping exitoso entre PC-LEGACY-1 y PC-LEGACY-3
+![Ping exitosos y fallidos Planta](Capturas/pingsPlanta.png)
+- Topología de la Planta de Producción
+![Topología de la Planta de Producción](Capturas/topologiaPlanta.png)
+
+
 
 ---
 
@@ -536,8 +555,11 @@ En el triángulo Corporativo (VLAN 10), con `SW-CORE` como root, el puerto Fa0/2
 
 En el triángulo de I+D (VLAN 20), con `SW-IYD-1` como root, el puerto Fa0/3 de `SW-IYD-3` (enlace directo hacia `SW-IYD-2`) quedó en estado **Blocking (Altn)**, mientras que ambos switches de hoja mantienen su ruta directa hacia `SW-IYD-1` en Forwarding. Esto confirma que la caída de cualquiera de los tres switches no aísla a los demás, ya que existe siempre un camino alternativo disponible.
 
-[CAPTURA AQUÍ: show spanning-tree vlan 10 en SW-CORE, SW-EDF-CORP-A, SW-EDF-CORP-B]
-[CAPTURA AQUÍ: show spanning-tree vlan 20 en SW-IYD-1, SW-IYD-2, SW-IYD-3]
+- Show spanning-tree vlan 10 en SW-CORE, SW-EDF-CORP-A, SW-EDF-CORP-B
+![ spanning-tree vlan 10](Capturas/spanningTRee.png)
+- Show spanning-tree vlan 20 en SW-IYD-1, SW-IYD-2, SW-IYD-3
+![ spanning-tree vlan 20](Capturas/treeVlan20.png)
+
 
 ### 8.3 Seguridad Básica — Banner MOTD
 
@@ -562,7 +584,9 @@ banner motd #Acceso Restringido - TechPark_201701160#
 
 No se aplicó en `SW-SERVERS`, `SW-IYD-2` ni `SW-IYD-3`, al ser switches de acceso puro (no distribuyen tráfico hacia otros switches ni constituyen un punto único de conexión hacia el Core).
 
-[CAPTURA AQUÍ: banner MOTD visible al reconectar la sesión de consola en SW-CORE]
+- Banner MOTD visible
+![Banner MOTD visible](Capturas/Banner.png)
+
 
 ### 4.5 Dominios de Colisión y Dominios de Broadcast
 
@@ -596,3 +620,39 @@ No se aplicó en `SW-SERVERS`, `SW-IYD-2` ni `SW-IYD-3`, al ser switches de acce
 | 90 | NATIVA | Sin hosts finales asignados — transporta tráfico no etiquetado entre trunks (control) | Todos los switches del campus |
 
 Cada VLAN constituye un dominio de broadcast **aislado de los demás**, independientemente de que sus dispositivos estén distribuidos en switches físicamente distintos — esto se logra gracias a la segmentación lógica por VLAN y su propagación centralizada mediante VTP, cumpliendo el objetivo de aislamiento inter-VLAN establecido en el resultado del aprendizaje del proyecto.
+
+### 4.6 Presupuesto Estimado de Equipos Físicos Simulados
+
+**Nota metodológica:** Se seleccionaron productos de catálogo de dos fabricantes de infraestructura de red reconocidos en la industria (Siemon, vía distribuidor Dartel Electricidad; y Panduit) para dar sustento técnico a los ítems de cableado. Ninguno de los dos catálogos publica precios de lista (modelo de venta por cotización a distribuidor/canal), por lo que los precios mostrados son estimaciones de mercado referenciales en USD para productos de especificación equivalente.
+
+#### Equipos activos
+
+| Equipo | Cantidad | Precio unitario (USD) | Subtotal (USD) |
+|---|---|---|---|
+| Switch Cisco Catalyst 2960-24TT | 8 | $650 | $5,200 |
+| Hub Ethernet (uso legacy, 8 puertos) | 1 | $40 | $40 |
+| Access Point Cisco Aironet (802.11n) | 1 | $180 | $180 |
+| Adaptador de red inalámbrico USB/PCI (laptops de visitantes) | 2 | $35 | $70 |
+
+#### Cableado y conectividad (productos de catálogo)
+
+| Ítem | Fabricante | Código / Ref. | Cantidad | Precio unitario (USD, ref.) | Subtotal (USD) |
+|---|---|---|---|---|---|
+| Cable UTP Cat6 CM, 4 pares 24AWG, rollo 305m | Siemon | 9C6M4-E2-RXA (Dartel: 1786308163) | 1 rollo | $95 | $95 |
+| Patch Cord UTP Cat6 CM/LSOH 26AWG, 0.9m (3ft) | Siemon | MC6-03-02 (Dartel: 1786154163) | 24 | $4.50 | $108 |
+| Conector Macho RJ-45 Cat6 8 pines (bolsa 50 und) | Siemon | P6U-8-8 (Dartel: 1786182163) | 1 bolsa | $18 | $18 |
+| Cable TX6000 UTP Cat6 Mejorada, U/UTP CM | Panduit | PUC6004BU-FE | Alternativa/respaldo | $0.35/m | — |
+| Cable de Parcheo Cat6 UTP, 28AWG, varios colores | Panduit | UTP28SP | 13 | $6.50 | $84.50 |
+| Módulo Jack Mini-Com TX6 PLUS Cat6, sin blindaje | Panduit | CJ688TG | — (no requerido, sin patch panel en el diseño) | — | — |
+
+#### Resumen
+
+| Categoría | Subtotal (USD) |
+|---|---|
+| Equipos activos | $5,490 |
+| Cableado y conectividad | $305.50 |
+| **TOTAL ESTIMADO** | **$5,795.50** |
+
+**Justificación del uso exclusivo de cobre:** dado que todos los edificios del campus se encuentran dentro de un mismo complejo (SmartCity Tech Park), las distancias entre switches no superan los límites recomendados para cobre UTP (100 m según el estándar 802.3), por lo que no se justificó técnica ni económicamente el uso de fibra óptica. Se seleccionaron productos Cat6 (Siemon UltraMAX / Panduit TX6) de gama estándar, suficientes en ancho de banda (hasta 1 Gbps) para el tráfico simulado en la topología, sin requerir el sobrecosto de Cat6A o fibra.
+
+**Fuentes de referencia:** Catálogo de Productos Siemon (Dartel Electricidad, 2022) y Catálogo de Infraestructura de Redes Panduit (Centro y Sudamérica).
