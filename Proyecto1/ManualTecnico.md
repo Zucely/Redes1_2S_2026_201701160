@@ -235,3 +235,260 @@ switchport access vlan 20
 [CAPTURA AQUÍ: show vlan brief en SW-IYD-1, SW-IYD-2 y SW-IYD-3]
 [CAPTURA AQUÍ: ping exitoso entre PC-IYD-01 y PC-IYD-08]
 [CAPTURA AQUÍ: IP Configuration de un servidor y una PC como ejemplo]
+
+
+### 4.3 Edificio Corporativo
+
+**Dispositivos utilizados:**
+- 2x Switch Cisco 2960-24TT — `SW-EDF-CORP-A` (Ala 1), `SW-EDF-CORP-B` (Ala 2)
+- 1x Access Point genérico (AP-PT) — `ACC-POINT-VISITANTES`
+- 4x PC — `PC-GER-1` a `PC-GER-4` (2 por ala, personal administrativo)
+- 2x Laptop — `LAP-VIS-1`, `LAP-VIS-2` (invitados, conexión inalámbrica)
+
+**Conexiones físicas:**
+
+| Origen | Puerto | Destino | Puerto | Tipo de cable |
+|---|---|---|---|---|
+| SW-CORE | Fa0/3 | SW-EDF-CORP-A | Fa0/2 | Cobre cruzado |
+| SW-CORE | Fa0/4 | SW-EDF-CORP-B | Fa0/1 | Cobre cruzado |
+| SW-EDF-CORP-A | Fa0/3 | SW-EDF-CORP-B | Fa0/2 | Cobre cruzado |
+| SW-EDF-CORP-A | Fa0/1 | ACC-POINT-VISITANTES | — | Cobre directo |
+| SW-EDF-CORP-A | Fa0/4 | PC-GER-3 | Fa0 | Cobre directo |
+| SW-EDF-CORP-A | Fa0/5 | PC-GER-4 | Fa0 | Cobre directo |
+| SW-EDF-CORP-B | Fa0/3 | PC-GER-1 | Fa0 | Cobre directo |
+| SW-EDF-CORP-B | Fa0/4 | PC-GER-2 | Fa0 | Cobre directo |
+
+**Justificación del diseño:**
+
+El Edificio Corporativo se distribuye físicamente en dos ubicaciones (alas), cada una con su propio switch de acceso (`SW-EDF-CORP-A` y `SW-EDF-CORP-B`), ambos conectados de forma independiente hacia `SW-CORE`. Para garantizar que la conectividad entre ambas alas se mantenga activa aunque la ruta hacia el Core quede inhabilitada, se añadió un enlace directo entre `SW-EDF-CORP-A` y `SW-EDF-CORP-B`, formando una topología en triángulo (Core–A, Core–B, A–B).
+
+A diferencia del Centro de Datos y el Centro de I+D, en este edificio no se implementó EtherChannel, ya que el enunciado no exige concentración adicional de ancho de banda en estos enlaces específicos, sino continuidad de conectividad ante fallos de ruta. Esta redundancia se resuelve mediante la topología triangular en conjunto con Spanning Tree Protocol (PVST), el cual detecta el bucle generado por los tres enlaces y bloquea automáticamente uno de ellos para prevenir tormentas de broadcast, sin perder la capacidad de reconvergencia ante una falla.
+
+El Access Point se conectó a `SW-EDF-CORP-A` para brindar servicio inalámbrico a las laptops de los visitantes (VLAN 50 - VISITANTES), manteniendo el tráfico de invitados completamente aislado del tráfico administrativo (VLAN 10 - GERENCIA) mediante segmentación lógica por VLAN.
+
+![Topologia Edificio Corporativo](Capturas/disposicionTopolodgiaEdifiioCorporativo.png)
+
+
+### 4.3.1 Configuración de Trunk y VTP — Edificio Corporativo
+
+**Configuración aplicada en SW-CORE (puertos hacia Corporativo):**
+
+```interface FastEthernet0/3
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+interface FastEthernet0/4
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+```
+
+
+**Configuración aplicada en SW-EDF-CORP-A:**
+
+```
+hostname SW-EDF-CORP-A
+no ip domain-lookup
+
+interface FastEthernet0/2
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+interface FastEthernet0/3
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+vtp domain Smart_6
+vtp password proyecto12S2026
+vtp mode client
+```
+
+
+**Configuración aplicada en SW-EDF-CORP-B:**
+```
+hostname SW-EDF-CORP-B
+no ip domain-lookup
+
+interface FastEthernet0/1
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+interface FastEthernet0/2
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+vtp domain Smart_6
+vtp password proyecto12S2026
+vtp mode client
+```
+
+Al interconectar `SW-CORE`, `SW-EDF-CORP-A` y `SW-EDF-CORP-B` en topología triangular, se generó nuevamente un bucle de Capa 2. **Spanning Tree Protocol (PVST)** bloqueó automáticamente uno de los tres enlaces para prevenir tormentas de broadcast, garantizando que la conectividad entre alas se mantenga activa ante la falla de cualquiera de los otros dos enlaces.
+
+[CAPTURA AQUÍ: show vlan brief en SW-EDF-CORP-A y SW-EDF-CORP-B mostrando VLANs propagadas]
+
+---
+
+### 4.3.2 Asignación de VLANs de Acceso — Gerencia (VLAN 10)
+```
+! SW-EDF-CORP-A (PC-GER-3, PC-GER-4)
+interface range FastEthernet0/4-5
+switchport mode access
+switchport access vlan 10
+
+! SW-EDF-CORP-B (PC-GER-1, PC-GER-2)
+interface range FastEthernet0/3-4
+switchport mode access
+switchport access vlan 10
+```
+
+| Dispositivo | Switch | Puerto | VLAN | IP | Máscara |
+|---|---|---|---|---|---|
+| PC-GER-1 | SW-EDF-CORP-B | Fa0/3 | 10 | 192.168.10.1 | 255.255.255.0 |
+| PC-GER-2 | SW-EDF-CORP-B | Fa0/4 | 10 | 192.168.10.2 | 255.255.255.0 |
+| PC-GER-3 | SW-EDF-CORP-A | Fa0/4 | 10 | 192.168.10.3 | 255.255.255.0 |
+| PC-GER-4 | SW-EDF-CORP-A | Fa0/5 | 10 | 192.168.10.4 | 255.255.255.0 |
+
+**Prueba de conectividad:** ping exitoso entre PCs de ambas alas dentro de la misma VLAN 10 (ej. PC-GER-1 ↔ PC-GER-3), confirmando conectividad a través del trunk entre switches físicamente distintos.
+
+[CAPTURA AQUÍ: ping exitoso entre PC-GER-1 y PC-GER-3]
+
+---
+
+### 4.3.3 Configuración del Access Point y Segmento de Visitantes (VLAN 50)
+
+**Puerto de acceso para el AP, en SW-EDF-CORP-A:**
+```
+interface FastEthernet0/1
+switchport mode access
+switchport access vlan 50
+exit
+```
+
+**Configuración inalámbrica en ACC-POINT-VISITANTES:**
+
+| Parámetro | Valor |
+|---|---|
+| SSID | Visitantes_TechPark |
+| Autenticación | WPA2-PSK |
+| Contraseña | TechPark2026 |
+
+[CAPTURA AQUÍ: configuración Port 1 (802.11) del Access Point]
+
+**Preparación de los clientes inalámbricos (laptops):**
+
+Las laptops `LAP-VIS-1` y `LAP-VIS-2` requirieron la instalación manual del módulo inalámbrico **WPC300N** en su ranura física (apagando el equipo antes de insertarlo), ya que no venía integrado por defecto.
+
+[CAPTURA AQUÍ: pestaña Physical de LAP-VIS-1 mostrando el módulo WPC300N instalado]
+
+Posteriormente, desde **Desktop → PC Wireless → Connect**, cada laptop se asoció manualmente a la red `Visitantes_TechPark` ingresando la contraseña correspondiente.
+
+[CAPTURA AQUÍ: pestaña Connect de PC Wireless con el SSID Visitantes_TechPark asociado]
+
+Finalmente, se asignó direccionamiento IP **estático** (no DHCP) a cada laptop, dentro del rango correspondiente a la VLAN 50:
+
+| Dispositivo | IP | Máscara |
+|---|---|---|
+| LAP-VIS-1 | 192.168.50.1 | 255.255.255.0 |
+| LAP-VIS-2 | 192.168.50.2 | 255.255.255.0 |
+
+[CAPTURA AQUÍ: IP Configuration en modo Static de LAP-VIS-1]
+
+**Pruebas de conectividad y aislamiento:**
+
+- Ping exitoso entre `LAP-VIS-1` (192.168.50.1) y `LAP-VIS-2` (192.168.50.2), confirmando conectividad inalámbrica dentro de la VLAN 50.
+- Ping fallido desde `LAP-VIS-1` hacia una PC de Gerencia (ej. 192.168.10.1), confirmando el aislamiento inter-VLAN entre el tráfico de invitados y el tráfico administrativo, tal como lo exige el enunciado.
+
+[CAPTURA AQUÍ: ping exitoso LAP-VIS-1 → LAP-VIS-2]
+[CAPTURA AQUÍ: ping fallido (Request timed out) LAP-VIS-1 → PC-GER-1]
+
+
+### 4.4 Planta de Producción
+
+**Dispositivos utilizados:**
+- 1x Switch Cisco 2960-24TT — `SW-PLANTA`
+- 1x Hub genérico (Hub-PT) — `HUB-LEGACY`
+- 3x PC — `PC-LEGACY-1`, `PC-LEGACY-2`, `PC-LEGACY-3` (maquinaria industrial simulada)
+
+**Conexiones físicas:**
+
+| Origen | Puerto | Destino | Puerto | Tipo de cable |
+|---|---|---|---|---|
+| SW-CORE | Fa0/5 | SW-PLANTA | Fa0/1 | Cobre cruzado |
+| SW-PLANTA | Fa0/2 | HUB-LEGACY | Fa0 | Cobre cruzado |
+| HUB-LEGACY | Fa1 | PC-LEGACY-1 | Fa0 | Cobre directo |
+| HUB-LEGACY | Fa2 | PC-LEGACY-2 | Fa0 | Cobre directo |
+| HUB-LEGACY | Fa3 | PC-LEGACY-3 | Fa0 | Cobre directo |
+
+**Configuración aplicada en SW-CORE (puerto hacia Planta):**
+
+```
+interface FastEthernet0/5
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+```
+
+
+**Configuración aplicada en SW-PLANTA:**
+
+```
+hostname SW-PLANTA
+no ip domain-lookup
+
+interface FastEthernet0/1
+switchport mode trunk
+switchport trunk native vlan 90
+exit
+
+interface FastEthernet0/2
+switchport mode access
+switchport access vlan 30
+exit
+
+vtp domain Smart_6
+vtp password proyecto12S2026
+vtp mode client
+```
+
+
+**Direccionamiento IP:**
+
+| Dispositivo | VLAN | IP | Máscara |
+|---|---|---|---|
+| PC-LEGACY-1 | 30 | 192.168.30.1 | 255.255.255.0 |
+| PC-LEGACY-2 | 30 | 192.168.30.2 | 255.255.255.0 |
+| PC-LEGACY-3 | 30 | 192.168.30.3 | 255.255.255.0 |
+
+**Prueba de conectividad:** ping exitoso entre las 3 PCs legacy, confirmando comunicación dentro del segmento compartido y a través de la VLAN 30 hacia el resto del dominio VTP.
+
+[CAPTURA AQUÍ: show vlan brief en SW-PLANTA]
+[CAPTURA AQUÍ: ping exitoso entre PC-LEGACY-1 y PC-LEGACY-3]
+[CAPTURA AQUÍ: topología de la Planta de Producción en Packet Tracer]
+
+---
+
+#### 4.4.1 Análisis del dominio de colisión compartido (segmento Legacy)
+
+El Hub opera en la Capa 1 del modelo OSI y **no realiza ninguna segmentación del tráfico**: simplemente repite eléctricamente cada trama recibida hacia todos sus demás puertos activos, sin importar el destino. Como consecuencia, `PC-LEGACY-1`, `PC-LEGACY-2`, `PC-LEGACY-3` y el puerto Fa0/2 de `SW-PLANTA` **comparten un único dominio de colisión**, a diferencia de cualquier otro segmento de la topología, donde cada puerto de switch constituye su propio dominio de colisión individual.
+
+**Impacto sobre el rendimiento de la red:**
+
+- Solo un dispositivo del segmento puede transmitir a la vez; si dos o más transmiten simultáneamente, ocurre una **colisión**, obligando a ambos emisores a esperar un tiempo aleatorio (backoff) antes de reintentar.
+- El Hub opera en **half-duplex** obligatorio, ya que no puede coordinar transmisión y recepción simultánea entre múltiples puertos.
+- A medida que se agregan más dispositivos legacy a este segmento, la probabilidad de colisión y el tiempo de espera promedio aumentan, degradando el rendimiento proporcionalmente al número de equipos conectados.
+- Este comportamiento contrasta con el resto del campus, donde los switches (conmutación por hardware, dominios de colisión independientes por puerto, full-duplex) no sufren este problema.
+
+**Medidas de contención aplicadas (a nivel del switch de acceso `SW-PLANTA`):**
+
+Dado que no es posible eliminar el Hub sin sustituir la maquinaria legacy (fuera del alcance de este proyecto), las medidas de mitigación se aplican en el punto de unión entre el mundo legacy y el mundo conmutado:
+
+1. **Aislamiento mediante VLAN dedicada (VLAN 30 - PRODUCCION):** aunque no elimina las colisiones dentro del segmento Legacy, contiene el dominio de broadcast generado por ese segmento, evitando que el tráfico de difusión del Hub se propague hacia el resto del campus (Gerencia, Investigación, Servidores, Visitantes).
+2. **Concentración del segmento en un único puerto de acceso del switch (Fa0/2):** el switch trata a todo el segmento Legacy como un solo dominio de colisión aislado del resto de sus puertos, evitando que la ineficiencia del Hub afecte el rendimiento de otros segmentos conectados al mismo switch.
+3. **Enlace troncal dedicado hacia el Core:** el tráfico legítimo que logra salir del segmento Legacy circula por un enlace independiente (Fa0/1 trunk), sin competir por ancho de banda con otros segmentos del campus en el mismo cable.
+
+Estas medidas mitigan el impacto del dominio de colisión compartido sin eliminarlo, tal como lo exige el enunciado — la única forma de eliminarlo por completo sería reemplazar el Hub por un switch, lo cual no es viable mientras la maquinaria industrial opere con protocolos legacy incompatibles con conmutación moderna.
