@@ -1,6 +1,10 @@
-## 4. Diseño e Implementación de la Topología
+## 1. Diseño e Implementación de la Topología
 
-### 4.1 Centro de Datos (Core)
+- Distribucion de areas para  SmartCity Tech Park
+![TopologiaCompleta](Capturas/TopologiaCompleta.png)
+
+
+### 1.1 Centro de Datos (Core)
 
 **Dispositivos utilizados:**
 - 1x Switch Cisco 2960-24TT — `SW-CORE` (Núcleo de la red, VTP Server)
@@ -50,7 +54,7 @@ vtp version 2
 
 ---
 
-### 4.2 Centro de I+D (Investigación y Desarrollo)
+### 1.2 Centro de I+D (Investigación y Desarrollo)
 
 **Dispositivos utilizados:**
 - 3x Switch Cisco 2960-24TT — `SW-IYD-1`, `SW-IYD-2`, `SW-IYD-3`
@@ -78,7 +82,7 @@ El enlace hacia `SW-CORE` se estableció mediante 2 conexiones físicas independ
 ![Topología del union CT e IYD](Capturas/topUnionCDIYD.png)
 
 
-### 4.2.1 Configuración de Trunk y VTP — Centro de I+D
+### 1.2.1 Configuración de Trunk y VTP — Centro de I+D
 
 **Enlaces troncales entre los 3 switches (triángulo redundante):**
 
@@ -175,7 +179,7 @@ Al interconectar `SW-IYD-1`, `SW-IYD-2` y `SW-IYD-3` en topología de triángulo
 
 ![Show vlan brief](Capturas/vlanBriefSWIYD2.png)
 
-### 4.2.2 Asignación de VLANs de Acceso y Direccionamiento IP
+### 1.2.2 Asignación de VLANs de Acceso y Direccionamiento IP
 
 **Centro de Datos — VLAN 40 (SERVIDORES) en SW-SERVERS:**
 ```
@@ -261,7 +265,7 @@ switchport access vlan 20
 
 
 
-### 4.3 Edificio Corporativo
+### 1.3 Edificio Corporativo
 
 **Dispositivos utilizados:**
 - 2x Switch Cisco 2960-24TT — `SW-EDF-CORP-A` (Ala 1), `SW-EDF-CORP-B` (Ala 2)
@@ -293,7 +297,7 @@ El Access Point se conectó a `SW-EDF-CORP-A` para brindar servicio inalámbrico
 ![Topologia Edificio Corporativo](Capturas/disposicionTopolodgiaEdifiioCorporativo.png)
 
 
-### 4.3.1 Configuración de Trunk y VTP — Edificio Corporativo
+### 1.3.1 Configuración de Trunk y VTP — Edificio Corporativo
 
 **Configuración aplicada en SW-CORE (puertos hacia Corporativo):**
 
@@ -361,7 +365,7 @@ Al interconectar `SW-CORE`, `SW-EDF-CORP-A` y `SW-EDF-CORP-B` en topología tria
 
 ---
 
-### 4.3.2 Asignación de VLANs de Acceso — Gerencia (VLAN 10)
+### 1.3.2 Asignación de VLANs de Acceso — Gerencia (VLAN 10)
 - SW-EDF-CORP-A (PC-GER-3, PC-GER-4)
 ```
 interface range FastEthernet0/4-5
@@ -391,7 +395,7 @@ switchport access vlan 10
 
 ---
 
-### 4.3.3 Configuración del Access Point y Segmento de Visitantes (VLAN 50)
+### 1.3.3 Configuración del Access Point y Segmento de Visitantes (VLAN 50)
 
 **Puerto de acceso para el AP, en SW-EDF-CORP-A:**
 ```
@@ -445,7 +449,7 @@ Finalmente, se asignó direccionamiento IP **estático** (no DHCP) a cada laptop
 ![Ping exitoso LAP-VIS-1 → LAP-VIS-2](Capturas/pingsModuloWIifi.png)
 
 
-### 4.4 Planta de Producción
+### 1.4 Planta de Producción
 
 **Dispositivos utilizados:**
 - 1x Switch Cisco 2960-24TT — `SW-PLANTA`
@@ -515,7 +519,7 @@ vtp mode client
 
 ---
 
-#### 4.4.1 Análisis del dominio de colisión compartido (segmento Legacy)
+#### 1.4.1 Análisis del dominio de colisión compartido (segmento Legacy)
 
 El Hub opera en la Capa 1 del modelo OSI y **no realiza ninguna segmentación del tráfico**: simplemente repite eléctricamente cada trama recibida hacia todos sus demás puertos activos, sin importar el destino. Como consecuencia, `PC-LEGACY-1`, `PC-LEGACY-2`, `PC-LEGACY-3` y el puerto Fa0/2 de `SW-PLANTA` **comparten un único dominio de colisión**, a diferencia de cualquier otro segmento de la topología, donde cada puerto de switch constituye su propio dominio de colisión individual.
 
@@ -536,7 +540,7 @@ Dado que no es posible eliminar el Hub sin sustituir la maquinaria legacy (fuera
 
 Estas medidas mitigan el impacto del dominio de colisión compartido sin eliminarlo, tal como lo exige el enunciado — la única forma de eliminarlo por completo sería reemplazar el Hub por un switch, lo cual no es viable mientras la maquinaria industrial opere con protocolos legacy incompatibles con conmutación moderna.
 
-### 8.2 Selección de Root Bridge (STP - PVST)
+## 2. Selección de Root Bridge (STP - PVST)
 
 Se configuró manualmente la prioridad de Spanning Tree para establecer switches Root Bridge estratégicos en cada uno de los dos triángulos redundantes del campus, en lugar de dejar la elección por default (que depende únicamente de la MAC address más baja).
 
@@ -561,7 +565,7 @@ En el triángulo de I+D (VLAN 20), con `SW-IYD-1` como root, el puerto Fa0/3 de 
 ![ spanning-tree vlan 20](Capturas/treeVlan20.png)
 
 
-### 8.3 Seguridad Básica — Banner MOTD
+## 3. Seguridad Básica — Banner MOTD
 
 Se configuró un banner de tipo **MOTD (Message Of The Day)** en todos los switches de distribución del campus, con el propósito de advertir formalmente sobre el acceso restringido al dispositivo antes de cualquier intento de autenticación. Esta es una práctica estándar de seguridad perimetral en entornos de red empresarial.
 
@@ -588,9 +592,9 @@ No se aplicó en `SW-SERVERS`, `SW-IYD-2` ni `SW-IYD-3`, al ser switches de acce
 ![Banner MOTD visible](Capturas/Banner.png)
 
 
-### 4.5 Dominios de Colisión y Dominios de Broadcast
+## 4 Dominios de Colisión y Dominios de Broadcast
 
-#### 4.5.1 Dominios de Colisión (por switch, según puertos activos)
+#### 4.1 Dominios de Colisión (por switch, según puertos activos)
 
 | Switch | Puertos activos | Dominios de colisión generados | Detalle |
 |---|---|---|---|
@@ -608,7 +612,7 @@ No se aplicó en `SW-SERVERS`, `SW-IYD-2` ni `SW-IYD-3`, al ser switches de acce
 
 **Nota sobre el segmento inalámbrico (VLAN 50):** el enlace radial entre `ACC-POINT-VISITANTES` y las laptops `LAP-VIS-1`/`LAP-VIS-2` constituye técnicamente un dominio de colisión adicional de tipo half-duplex compartido (medio inalámbrico), independiente del dominio de colisión del puerto Fa0/1 de `SW-EDF-CORP-A` (que conecta al AP por cable).
 
-#### 4.5.2 Dominios de Broadcast (uno por VLAN activa)
+#### 4.1.1 Dominios de Broadcast (uno por VLAN activa)
 
 | VLAN | Nombre | Dispositivos que lo integran | Switches involucrados |
 |---|---|---|---|
@@ -621,7 +625,7 @@ No se aplicó en `SW-SERVERS`, `SW-IYD-2` ni `SW-IYD-3`, al ser switches de acce
 
 Cada VLAN constituye un dominio de broadcast **aislado de los demás**, independientemente de que sus dispositivos estén distribuidos en switches físicamente distintos — esto se logra gracias a la segmentación lógica por VLAN y su propagación centralizada mediante VTP, cumpliendo el objetivo de aislamiento inter-VLAN establecido en el resultado del aprendizaje del proyecto.
 
-### 4.6 Presupuesto Estimado de Equipos Físicos Simulados
+### 4.2 Presupuesto Estimado de Equipos Físicos Simulados
 
 **Nota metodológica:** Se seleccionaron productos de catálogo de dos fabricantes de infraestructura de red reconocidos en la industria (Siemon, vía distribuidor Dartel Electricidad; y Panduit) para dar sustento técnico a los ítems de cableado. Ninguno de los dos catálogos publica precios de lista (modelo de venta por cotización a distribuidor/canal), por lo que los precios mostrados son estimaciones de mercado referenciales en USD para productos de especificación equivalente.
 
