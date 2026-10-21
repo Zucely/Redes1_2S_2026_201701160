@@ -335,6 +335,254 @@ Caja1 - Core1
 ![Caja1 - Core1](Capturas/pingCaja1ACore1.png)
 
 
+# Configuraciones NORTE
+
+## Subnetting y switches de Norte
+
+
+| VLAN | Hosts + gateway | Máscara | Red | Gateway |
+|------|-----------------|---------|-----|---------|
+| 53 Análisis | 50 + 1 | /26 | 10.57.20.0 | .1 |
+| 63 Auditoría | 25 + 1 | /27 | 10.57.20.64 | .65 |
+| 73 Legal | 14 + 1 | /28 | 10.57.20.96 | .97 |
+
+> *Aquí Auditoría sí cabe en /27 (30 útiles) y Legal en /28 (14 útiles, y con el gateway son 15).*
+
+**Enlace Core1-R-Norte (/30):** 10.57.0.16/30
+- Core1 Gi0/2 = .17
+- R-Norte Gi0/1 = .18
+
+---
+
+## SW-Norte-Principal (VTP server y Root Bridge)
+
+```cisco
+enable
+configure terminal
+hostname SW-Norte-Principal
+no ip domain-lookup
+line console 0
+ logging synchronous
+ exit
+
+spanning-tree mode rapid-pvst
+spanning-tree vlan 53,63,73 root primary
+
+vtp domain bantech57
+vtp password cisco
+vtp mode server
+
+vlan 53
+ name Analisis
+vlan 63
+ name Auditoria
+vlan 73
+ name Legal
+ exit
+
+interface range fa0/1 - 3
+ switchport mode trunk
+ exit
+end
+write memory
+
+
+                ---- SW-Norte-A1 (VTP client) -----
+
+enable
+configure terminal
+hostname SW-Norte-A1
+no ip domain-lookup
+line console 0
+ logging synchronous
+ exit
+
+spanning-tree mode rapid-pvst
+
+vtp domain bantech57
+vtp password cisco
+vtp mode client
+
+interface range fa0/1 - 2
+ switchport mode trunk
+ exit
+end
+
+               ---- SW-Norte-A2 (VTP client) -----
+enable
+configure terminal
+hostname SW-Norte-A2
+no ip domain-lookup
+line console 0
+ logging synchronous
+ exit
+spanning-tree mode rapid-pvst
+vtp domain bantech57
+vtp password cisco
+vtp mode client
+interface range fa0/1 - 2
+ switchport mode trunk
+ exit
+end
+```
+
+
+
+Test vlan brief A1 (Propagacion desde principal)
+![Test vlan brief A1](Capturas/showvlanBriefNORTeA1.png)
+
+Test vlan brief A2 (Propagacion desde principal)
+![Test vlan brief A2](Capturas/showVlanBriegNorteA2.png)
+
+# Asignación de Puertos de las PCs NORTE
+
+```cisco
+                    ---- En SW-Norte-A1 ----
+configure terminal
+
+interface range fa0/3 - 4
+ switchport mode access
+ switchport access vlan 53
+ exit
+
+interface fa0/5
+ switchport mode access
+ switchport access vlan 63
+ exit
+
+end
+write memory
+
+
+                    ---- En SW-Norte-A2 ----
+
+configure terminal
+
+interface fa0/6
+ switchport mode access
+ switchport access vlan 53
+ exit
+
+interface fa0/3
+ switchport mode access
+ switchport access vlan 63
+ exit
+
+interface range fa0/4 - 5
+ switchport mode access
+ switchport access vlan 73
+ exit
+
+end
+write memory
+```
+
+
+# R-Norte (router-on-a-stick y EIGRP)
+
+
+```cisco
+                        ---- Core1 ----
+configure terminal
+
+interface gi0/2
+ no switchport
+ ip address 10.57.0.17 255.255.255.252
+ no shutdown
+ exit
+
+end
+write memory
+
+
+
+---- Configuración R-Norte (Router-on-a-stick y EIGRP) ----
+
+enable
+configure terminal
+hostname R-Norte
+no ip domain-lookup
+line console 0
+ logging synchronous
+ exit
+
+interface gi0/1
+ ip address 10.57.0.18 255.255.255.252
+ no shutdown
+ exit
+
+interface gi0/0
+ no ip address
+ no shutdown
+ exit
+
+interface gi0/0.53
+ encapsulation dot1Q 53
+ ip address 10.57.20.1 255.255.255.192
+ exit
+
+interface gi0/0.63
+ encapsulation dot1Q 63
+ ip address 10.57.20.65 255.255.255.224
+ exit
+
+interface gi0/0.73
+ encapsulation dot1Q 73
+ ip address 10.57.20.97 255.255.255.240
+ exit
+
+router eigrp 100
+ network 10.57.20.0 0.0.0.255
+ network 10.57.0.16 0.0.0.3
+ no auto-summary
+ exit
+end
+write memory
+```
+
+
+# IPs de las PCs de Norte
+
+| PC | IP | Máscara | Gateway |
+|----|----|---------|---------|
+| Análisis 1 | 10.57.20.2 | 255.255.255.192 | 10.57.20.1 |
+| Análisis 2 | 10.57.20.3 | 255.255.255.192 | 10.57.20.1 |
+| Análisis 3 | 10.57.20.4 | 255.255.255.192 | 10.57.20.1 |
+| Auditoría 1 | 10.57.20.66 | 255.255.255.224 | 10.57.20.65 |
+| Auditoría 2 | 10.57.20.67 | 255.255.255.224 | 10.57.20.65 |
+| Legal 1 | 10.57.20.98 | 255.255.255.240 | 10.57.20.97 |
+| Legal 2 | 10.57.20.99 | 255.255.255.240 | 10.57.20.97 |
+
+Test: Ping Analisis 1
+![Test: Ping Analisis 1](Capturas/pingsDePruebaPCAnalisis1.png)
+
+
+Spanning tree vlan 53
+![Spanning tree vlan 53](Capturas/Spanning-tree-vlan-53-norteA2.png)
+
+
+Rootbridge
+![Rootbridge](Capturas/PENDIENTE-spanning-tree-norte-principal-this-is-the-root.png)
+
+
+
+
+
+# Fin de Norte por el momento
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
