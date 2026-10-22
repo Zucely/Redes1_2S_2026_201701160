@@ -600,8 +600,6 @@ write memory
 Test: show ip route
 ![Test: show ip route](Capturas/SHOW-IP-ROUTE-R-NORTE.png)
 
-Cuando lo hayas ejecutado, cuéntame qué te salió en las pruebas y seguimos con el siguiente paso.
-
 
 - **Core1** tiene el vecino EIGRP `10.57.0.18` (R-Norte) y aprende las 3 redes de Norte como **D** (`10.57.20.0/26`, `.64/27`, `.96/28`).
 - **R-Norte** recibe todo el backbone y Occidente como **D EX** (externas EIGRP), que es justo lo esperado cuando OSPF se redistribuye en EIGRP.
