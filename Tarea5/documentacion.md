@@ -1,5 +1,12 @@
-## Subneteo
+# TAREA 5
+- Maria Zucely Hernández García
+- 201701160
 
+## Topologia
+
+![Show VLAN Brief en SW1](Capturas/topologia.png)
+
+## Subneteo
 Carné **201701160**:
 
 - **YY = 16**, red base: **192.168.16.0/24**.
@@ -9,7 +16,7 @@ Carné **201701160**:
 
 ### Cálculo
 
-Necesitamos 2 redes, así que se toma 1 bit prestado del host (2¹ = 2 subredes):
+Se necesitan 2 redes, así que se toma 1 bit prestado del host (2¹ = 2 subredes):
 
 - Máscara: `/24` pasa a `/25` = **255.255.255.128**
 - Hosts por subred: `2⁷ − 2 = 126`
@@ -82,7 +89,7 @@ write memory
 
 ## Ruteo InterVLAN (Router-on-a-Stick) en R1 y R2
 
-Cada router recibe un solo cable del switch (Gi0/1), pero por ahí viajan las dos VLAN. Para que el router las separe, dividimos esa interfaz en subinterfaces, una por VLAN, cada una con su IP. Así los routers pueden pasar tráfico de la VLAN 10 a la VLAN 20.
+Cada router recibe un solo cable del switch (Gi0/1), pero por ahí viajan las dos VLAN. Para que el router las separe, se debe dividir esa interfaz en subinterfaces, una por VLAN, cada una con su IP. Así los routers pueden pasar tráfico de la VLAN 10 a la VLAN 20.
 
 ### R1-Activo
 
@@ -179,11 +186,11 @@ write memory
 
 ## Enrutamiento dinámico (OSPF) hacia el ISP
 
-Aquí hacemos dos cosas: darles IP a los enlaces entre los routers y el ISP, y activar OSPF para que los tres routers aprendan las rutas entre sí automáticamente.
+Hay que darle IP a los enlaces entre los routers y el ISP, y activar OSPF para que los tres routers aprendan las rutas entre sí automáticamente.
 
 ### Direccionamiento de los enlaces al ISP
 
-Estos enlaces necesitan su propia red, distinta a la 192.168.16.0/24. Usaremos redes /30 (solo 2 IP útiles, ideales para enlaces punto a punto):
+Estos enlaces necesitan su propia red, distinta a la 192.168.16.0/24. Se usan redes /30 (solo 2 IP útiles, ideales para enlaces punto a punto):
 
 | Enlace | Red | ISP | Router |
 |--------|-----|-----|--------|
@@ -225,7 +232,6 @@ write memory
 
 ### R1-Activo
 
-Agrega esto (ya tiene la configuración del Paso 4):
 
 ```cisco
 enable
@@ -293,4 +299,161 @@ En R1, R2 e ISP:
 **`Ping desde` **R1** `a 10.10.10.10`**  
 ![Ping a 10.10.10.10](Capturas/pingR1.png)  
 
+
+## HSRP
+
+HSRP hace que R1 y R2 compartan una IP virtual por VLAN. Las PCs usan esa IP como gateway (.1 y .129). Un router está **Active** (responde por la IP virtual) y el otro **Standby** (espera). Si el Active falla, el Standby toma el control.
+
+### Cómo se decide quién es Active
+
+Gana el que tenga mayor `priority` (por defecto 100). Se le pone 110 a R1 y se agrega `preempt`, para que R1 recupere el rol Active cuando vuelva tras una falla.
+
+### R1-Activo
+
+```cisco
+enable
+configure terminal
+
+interface gigabitEthernet 0/1.10
+ standby version 2
+ standby 10 ip 192.168.16.1
+ standby 10 priority 110
+ standby 10 preempt
+exit
+
+interface gigabitEthernet 0/1.20
+ standby version 2
+ standby 20 ip 192.168.16.129
+ standby 20 priority 110
+ standby 20 preempt
+exit
+
+end
+write memory
+```
+
+### R2-Standby
+
+```
+enable
+configure terminal
+
+interface gigabitEthernet 0/1.10
+ standby version 2
+ standby 10 ip 192.168.16.1
+ standby 10 preempt
+exit
+
+interface gigabitEthernet 0/1.20
+ standby version 2
+ standby 20 ip 192.168.16.129
+ standby 20 preempt
+exit
+
+end
+write memory
+```
+
+### Qué hace cada línea
+
+- **`standby version 2`**: usa HSRP v2 (lo uso aquí para evitar conflictos con subinterfaces; ponlo en ambos routers).
+- **`standby 10 ip ...`**: el número 10 es el grupo (uso uno por VLAN) y la IP es la virtual.
+- **`priority 110`**: R1 gana la elección y queda Active.
+- **`preempt`**: permite que el router con mayor prioridad retome el rol Active.
+
+### Verificación
+
+`show standby brief` y 
+`show standby` en **R1-Active**
+![Stanby brief active](Capturas/standByBrief-R1.png)
+
+`show standby brief` y 
+`show standby` en **R1-Standby**
+![Stanby brief active](Capturas/standByBrief-R2.png)
+
+
+Ping a **IP virtual** `192.168.16.1` y a **PC-3**
+`192.168.16.140` desde **PC-1**
+![Pings PC1](Capturas/ping-pc1-ipVirtual-PC3.png)
+
+## Prueba de fallo
+
+El objetivo es demostrar que, al caerse R1 (el Active), R2 toma el tráfico y el ping no se corta (o se pierden solo uno o dos paquetes).
+
+### 1. Iniciar el ping sostenido
+
+En PC1, Command Prompt:
+
+```cmd
+ping -t 192.168.16.140
+```
+
+![Pings PC1](Capturas/PingSostenidoA192.168.16.140.png)
+
+Se verá la respuesta contínua (Reply from...).
+
+### 2. Apagar la interfaz de R1
+
+Mientras el ping corre, en R1-Activo:
+
+```cisco
+enable
+configure terminal
+interface gigabitEthernet 0/1
+ shutdown
+end
+```
+
+![Pings PC1](Capturas/apagarInterfazEnR1.png)
+
+Aqui se apaga la física Gi0/1 (no las subinterfaces) porque simula la caída del enlace completo hacia el switch.
+
+### 3. Observar el ping en PC1
+
+Se verán uno o varios `Request timed out` y luego las respuestas se reanudan solas. Ese corte es el tiempo que tarda HSRP en detectar la falla (hasta unos 10 segundos con el hold time por defecto). Después del cambio, el ping continúa por R2.
+
+
+![Pings PC1](Capturas/perdidaDeMaximo2Paquetes.png)
+
+### 4. Verificar el cambio en R2
+
+En R2-Standby:
+
+```cisco
+show standby brief
+```
+
+
+![Pings PC1](Capturas/R2-enActive.png)
+
+Los grupos 10 y 20 deben aparecer ahora como **Active**. 
+
+**Muestra de las 3 ventanas sucediendo a la vez**
+
+
+![Pings PC1](Capturas/los3AlAVer.png)
+
+### 5. Detener el ping
+
+En PC1 presionar `Ctrl + C` para ver las estadísticas finales.
+
+
+![Pings PC1](Capturas/perdidaDe2Paquetes.png)
+
+
+
+### Recuperación (preempt)
+
+Para mostrar que R1 recupera el rol, en R1 se ejecuta:
+
+```cisco
+configure terminal
+interface gigabitEthernet 0/1
+ no shutdown
+end
+```
+
+Hay que sperar unos segundos y ejecutar show standby brief en R1: debería volver a Active.
+
+![Pings PC1](Capturas/R1aCTIVEdeNuevo-R2enStandByCambio.png)
 
