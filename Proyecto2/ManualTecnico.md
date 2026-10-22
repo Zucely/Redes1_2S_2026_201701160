@@ -594,22 +594,18 @@ write memory
 
 - En **Core1**: `show ip eigrp neighbors` debe mostrar a R-Norte (10.57.0.18).
 - En **Core1**: `show ip route` debe mostrar rutas **D** hacia `10.57.20.x`.
-- En **R-Norte**: `show ip route` debe mostrar rutas **D EX** hacia `10.57.10.x` y `10.57.0.x`.
-- Desde **Análisis 1**: `ping 10.57.10.2` (Cajas 1, en Occidente).
 
 Test: show ip route
-![Test: show ip route](Capturas/SHOW-IP-ROUTE-R-NORTE.png)
+![Test: show ip route](Capturas/configCore1.png)
 
 
-- **Core1** tiene el vecino EIGRP `10.57.0.18` (R-Norte) y aprende las 3 redes de Norte como **D** (`10.57.20.0/26`, `.64/27`, `.96/28`).
-- **R-Norte** recibe todo el backbone y Occidente como **D EX** (externas EIGRP), que es justo lo esperado cuando OSPF se redistribuye en EIGRP.
-- El ping **Análisis 1 → Cajas 1** confirma conectividad extremo a extremo Norte ↔ Occidente.
+- En **R-Norte**: `show ip route` debe mostrar rutas **D EX** hacia `10.57.10.x` y `10.57.0.x`.
 
-Test: show ip route Core 1 
-![Test: show ip route Core 1 ](Capturas/show-ip-neigh-y-show-ip-route-ENCORE1.png)
+![Test: show ip route](Capturas/configRNorte.png)
 
+- Desde **Análisis 1**: `ping 10.57.10.2` (Cajas 1, en Occidente).
 
-**Un detalle para el manual:** en Core1 todavía no aparece ninguna ruta **O E2** hacia Norte porque Core1 es quien redistribuye. Cuando verifiques desde **Core2** o **Core3**, ahí sí deberías ver las rutas `10.57.20.x` como **O E2**. Es una buena tercera captura de evidencia.
+![Test: show ip route](Capturas/pingPC1aCajas1Occidente.png)
 
 
 
