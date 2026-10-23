@@ -40,6 +40,21 @@ no ip domain-lookup
 - **Core1 Fa0/1 y MS1 Gi0/1:** 10.57.0.24/30 (.25 y .26)
 - **Core2 Gi0/2 y MS2 Gi0/1:** 10.57.0.28/30 (.29 y .30)
 
+## Subnetting VLSM Sede Central
+
+
+| VLAN | Hosts + gateway | Máscara | Red | Gateway |
+|------|-----------------|---------|-----|---------|
+| 24 Web_Apps | 28 + 1 | /27 | 10.57.40.0 | .1 |
+| 14 Core_BD | 14 + 1 | /28 | 10.57.40.32 | .33 |
+| 34 NOC | 10 + 1 | /28 | 10.57.40.48 | .49 |
+
+
+**Enlaces /30**
+
+- **Core2 Fa0/1 y R-Central1 Gi0/0:** 10.57.0.20/30 (.21 y .22)
+- **R-Central1 Gi0/1 y R-Central2 Gi0/0:** 10.57.0.32/30 (.33 y .34)
+- **R-Central2 Gi0/1 y SW-DC-Dist Gi0/1:** 10.57.0.36/30 (.37 y .38)
 
 
 
@@ -576,8 +591,7 @@ Rootbridge
 
 
 
-# Redistribución EIGRP - OSPF en Core1
-## Configuración de Redistribución 
+## Redistribución EIGRP - OSPF en Core1 
 
 ```cisco
                         ---- en Core1 ----
@@ -887,13 +901,232 @@ write memory
 ![Occidente a oriente](Capturas/nuevas/ping-caja1-a-boveda1.png)
 
 
-# hasta aca llega ORIENTE
-# hasta aca llega ORIENTE
-# hasta aca llega ORIENTE
-# hasta aca llega ORIENTE
-# hasta aca llega ORIENTE
-# hasta aca llega ORIENTE
-# hasta aca llega ORIENTE
+# Configuraciones Sede Central
+
+```cisco
+                ----Core2 (lado hacia Central)----
+configure terminal
+
+interface fa0/1
+ no switchport
+ ip address 10.57.0.21 255.255.255.252
+ no shutdown
+ exit
+
+router ospf 1
+ network 10.57.0.20 0.0.0.3 area 0
+ exit
+
+end
+write memory
+                ---- Router Central 1 (De estadisticas hacia OSPF)----
+
+enable
+configure terminal
+hostname R-Central1
+no ip domain-lookup
+line console 0
+ logging synchronous
+ exit
+
+interface gi0/0
+ ip address 10.57.0.22 255.255.255.252
+ no shutdown
+ exit
+
+interface gi0/1
+ ip address 10.57.0.33 255.255.255.252
+ no shutdown
+ exit
+
+ip route 10.57.40.0 255.255.255.224 10.57.0.34
+ip route 10.57.40.32 255.255.255.240 10.57.0.34
+ip route 10.57.40.48 255.255.255.240 10.57.0.34
+ip route 10.57.0.36 255.255.255.252 10.57.0.34
+
+router ospf 1
+ router-id 5.5.5.5
+ network 10.57.0.20 0.0.0.3 area 0
+ redistribute static subnets
+ exit
+
+end
+write memory
+
+                ---- R-Central2 Router de Acceso ----
+enable
+configure terminal
+hostname R-Central2
+no ip domain-lookup
+line console 0
+ logging synchronous
+ exit
+
+interface gi0/0
+ ip address 10.57.0.34 255.255.255.252
+ no shutdown
+ exit
+
+interface gi0/1
+ ip address 10.57.0.37 255.255.255.252
+ no shutdown
+ exit
+
+ip route 0.0.0.0 0.0.0.0 10.57.0.33
+ip route 10.57.40.0 255.255.255.224 10.57.0.38
+ip route 10.57.40.32 255.255.255.240 10.57.0.38
+ip route 10.57.40.48 255.255.255.240 10.57.0.38
+
+end
+write memory
+
+                ---- Switch-SedeCentral-Distribucion (3560, VTP Server) ----
+
+enable
+configure terminal
+hostname SW-DC-Dist
+no ip domain-lookup
+ip routing
+line console 0
+ logging synchronous
+ exit
+
+vtp domain bantech57
+vtp password cisco
+vtp mode server
+
+vlan 14
+ name Core_BD
+vlan 24
+ name Web_Apps
+vlan 34
+ name NOC
+ exit
+
+interface range fa0/23 - 24
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 2 mode active
+ no shutdown
+ exit
+
+interface port-channel 2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ exit
+
+interface gi0/1
+ no switchport
+ ip address 10.57.0.38 255.255.255.252
+ no shutdown
+ exit
+
+interface vlan 14
+ ip address 10.57.40.33 255.255.255.240
+ no shutdown
+ exit
+
+interface vlan 24
+ ip address 10.57.40.1 255.255.255.224
+ no shutdown
+ exit
+
+interface vlan 34
+ ip address 10.57.40.49 255.255.255.240
+ no shutdown
+ exit
+
+ip route 0.0.0.0 0.0.0.0 10.57.0.37
+
+end
+write memory
+
+                ---- SW-SedeCentral-Acceso (2960, VTP Cliente)----
+
+enable
+configure terminal
+hostname SW-DC-Acceso
+no ip domain-lookup
+line console 0
+ logging synchronous
+ exit
+
+vtp domain bantech57
+vtp password cisco
+vtp mode client
+
+interface range fa0/23 - 24
+ switchport mode trunk
+ channel-group 2 mode active
+ no shutdown
+ exit
+
+interface port-channel 2
+ switchport mode trunk
+ exit
+
+end
+
+                ---- Asignar los puertos en SW-SedeCentral-Acceso ----
+
+configure terminal
+interface range fa0/1 - 3
+ switchport mode access
+ switchport access vlan 14
+ exit
+interface range fa0/4 - 6
+ switchport mode access
+ switchport access vlan 24
+ exit
+interface fa0/7
+ switchport mode access
+ switchport access vlan 34
+ exit
+end
+write memory
+
+```
+
+### Creacion de Vlans
+
+
+![VLANS](Capturas/capturas-viernes/ShowVlanBrief-SWAcceso.png)
+
+## IPs de los servidores
+
+| Equipo | IP | Máscara | Gateway |
+|--------|----|---------|---------|
+| Core_BD 1 | 10.57.40.34 | 255.255.255.240 | 10.57.40.33 |
+| Core_BD 2 | 10.57.40.35 | 255.255.255.240 | 10.57.40.33 |
+| Core_BD 3 | 10.57.40.36 | 255.255.255.240 | 10.57.40.33 |
+| Web_Apps 1 | 10.57.40.2 | 255.255.255.224 | 10.57.40.1 |
+| Web_Apps 2 | 10.57.40.3 | 255.255.255.224 | 10.57.40.1 |
+| Web_Apps 3 | 10.57.40.4 | 255.255.255.224 | 10.57.40.1 |
+| NOC 1 | 10.57.40.50 | 255.255.255.240 | 10.57.40.49 |
+
+---
+
+# Verificaciones
+
+
+**Test Etherchannel summary SW Distribucion**
+  ![Distribucion](Capturas/capturas-viernes/ShowEthercannelSummary-Distribucion.png)
+
+**Test Etherchannel summary SW Acceso**
+  ![Acceso](Capturas/capturas-viernes/ShowEthercannelSummary-Acceso.png)
+
+**R-Central1:** 
+show ip route, con rutas (S) hacia 10.57.40.x y (O) hacia el resto.
+  ![IP Route R-Central](Capturas/capturas-viernes/ShowIpRoute-RCentral1.png)  
+
+**Core1:** show ip route, con 10.57.40.x como (O E2).
+  ![IP Route Core1](Capturas/capturas-viernes/ShowIpRoute-Core1.png)
+
+- **NOC 1:** `ping 10.57.10.2` (Occidente), `ping 10.57.20.2` (Norte) y `ping 10.57.30.132` (Oriente).
+  > [CAPTURA] Pings-NOC1-hacia-occidente-norte-oriente
+
+- **Web_Apps 1:** `ping 10.57.40.34` (inter-VLAN en el Dist).
+  > [CAPTURA] WebApps1-Pings-InterVlan
 
 
 
@@ -915,6 +1148,23 @@ write memory
 
 Topologia del core
 ![Topologia del core](Capturas/Topologia-Core.png)
+## Core2 (lado hacia Central)
+
+```cisco
+configure terminal
+
+interface fa0/1
+ no switchport
+ ip address 10.57.0.21 255.255.255.252
+ no shutdown
+ exit
+
+router ospf 1
+ network 10.57.0.20 0.0.0.3 area 0
+ exit
+
+end
+write memory
 
 ping del core
 ![Ping del core](Capturas/Ping-Core.png)
@@ -924,9 +1174,6 @@ Prueba OSPF
 
 Topologia Occidente
 ![Topologia Occidente](Capturas/TopologiaOccidente.png)
-
-Vlans Occidente
-![Vlans Occidente](Capturas/VlansOccidente.png)
 
 Vlans Occidente
 ![Vlans Occidente](Capturas/VlansOccidente.png)
