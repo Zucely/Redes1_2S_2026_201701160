@@ -1122,11 +1122,13 @@ show ip route, con rutas (S) hacia 10.57.40.x y (O) hacia el resto.
 **Core1:** show ip route, con 10.57.40.x como (O E2).
   ![IP Route Core1](Capturas/capturas-viernes/ShowIpRoute-Core1.png)
 
-- **NOC 1:** `ping 10.57.10.2` (Occidente), `ping 10.57.20.2` (Norte) y `ping 10.57.30.132` (Oriente).
-  > [CAPTURA] Pings-NOC1-hacia-occidente-norte-oriente
+**NOC 1:** ping 10.57.10.2 (Occidente), ping 10.57.20.2 (Norte) y ping 10.57.30.132 (Oriente).
+  
+  ![Ping NOC 1 - Occidente, Norte, Oriente](Capturas/capturas-viernes/Pings-NOC1-hacia-occidente-norte-oriente.png)
 
-- **Web_Apps 1:** `ping 10.57.40.34` (inter-VLAN en el Dist).
-  > [CAPTURA] WebApps1-Pings-InterVlan
+**Web_Apps 1:** ping 10.57.40.34 (inter-VLAN en el Dist).
+  ![WEB - APPS](Capturas/capturas-viernes/WebApps1-Pings-InterVlan.png)
+  
 
 
 
