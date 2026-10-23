@@ -167,7 +167,7 @@ write memory
                     ----- En Core 3 -----
 configure terminal
 
-interface se0/0/0
+interface se0/3/0
  ip address 10.57.0.13 255.255.255.252
  clock rate 64000
  no shutdown
@@ -185,7 +185,7 @@ line console 0
  logging synchronous
  exit
 
-interface se0/0/0
+interface se0/3/0
  ip address 10.57.0.14 255.255.255.252
  no shutdown
  exit
@@ -1106,7 +1106,7 @@ write memory
 
 ---
 
-# Verificaciones
+## Verificaciones
 
 
 **Test Etherchannel summary SW Distribucion**
@@ -1130,18 +1130,50 @@ show ip route, con rutas (S) hacia 10.57.40.x y (O) hacia el resto.
   ![WEB - APPS](Capturas/capturas-viernes/WebApps1-Pings-InterVlan.png)
   
 
+# Explicación del HSRP
 
+MS1 y MS2 comparten una IP virtual (10.57.30.129) y una MAC virtual. Las PCs usan esa IP como gateway y no saben cuál switch la atiende.
 
+- MS1 tiene prioridad 110 y MS2 100, así que MS1 es Active y MS2 Standby.
+- Se mandan mensajes (hello) cada 3 segundos. Si MS2 deja de recibirlos durante el hold time (10 s), asume el rol Active.
+- Las PCs siguen mandando a la misma IP virtual, y ahora responde MS2. Por eso no cambian su configuración.
+- Con preempt, cuando MS1 regresa, recupera el rol Active.
 
+## Prueba
 
+1.En **MS1**: show standby brief. Debera mostrar Active en VLAN 83 y 93.
+2.En **MS2**: show standby brief. Debera mostrar Standby.
 
+  ![MS1 - MS2](Capturas/pruebas-failover-HSRP/MS1Active-y-MS2Standy-con-Show-Standby-Brief.png)
 
+3.En **Bóveda 1** (Desktop, Command Prompt):
+   ```cmd
+   ping -t 10.57.30.129
+   ```
+4.En MS1, simular el corte:
+```
+configure terminal
+interface range fa0/1 , fa0/23 , gi0/1
+ shutdown
+end
+```
 
+El ping pierde 1 a 3 paquetes y se recupera.
 
+  ![Paquetes Perdidos Bov1](Capturas/pruebas-failover-HSRP/perdida-de-paquetes-con-caida-de-puerto-boveda1.png)
 
+6.Revertir en MS1:
+```cisco
+configure terminal
+interface range fa0/1 , fa0/23 , gi0/1
+ no shutdown
+end
+```
+- Esperar 20 segundos.
+- En MS1: show standby brief. Debe recuperar Active.
+- En MS2: show standby brief. Debe volver a Standby.
 
-
-
+   ![Caida Puertos](Capturas/pruebas-failover-HSRP/caida-de-puertos-en-MS1-Y-Cambio-en-standby-de-MS2.png)
 
 
 
@@ -1167,6 +1199,7 @@ router ospf 1
 
 end
 write memory
+```
 
 ping del core
 ![Ping del core](Capturas/Ping-Core.png)
