@@ -1180,8 +1180,6 @@ end
 
 # Capturas
 
-Topologia del core
-![Topologia del core](Capturas/Topologia-Core.png)
 ## Core2 (lado hacia Central)
 
 ```cisco
@@ -1207,9 +1205,23 @@ ping del core
 Prueba OSPF
 ![Prueba OSPF](Capturas/PruebaOSPF.png)
 
-Topologia Occidente
-![Topologia Occidente](Capturas/TopologiaOccidente.png)
-
 Vlans Occidente
 ![Vlans Occidente](Capturas/VlansOccidente.png)
 
+Topologia Occidente
+![Occidente](Capturas/topologia/Occidente.jpeg)
+
+Topologia Central
+![Central](Capturas/topologia/central.jpeg)
+
+Topologia Norte
+![Norte](Capturas/topologia/norte.jpeg)
+
+Topologia Oriente
+![Oriente](Capturas/topologia/oriente.jpeg)
+
+Topologia Backbone
+![Backbone](Capturas/topologia/backbone.jpeg)
+
+Topologia Completa
+![Completa](Capturas/topologia/Completa.jpeg)
